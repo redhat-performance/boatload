@@ -567,7 +567,7 @@ def main():
 
   # Workload container image, port, environment, and resources arguments
   parser.add_argument("-i", "--container-image", type=str,
-                      default="quay.io/redhat-performance/test-gohttp-probe:latest", help="The container image to use")
+                      default="quay.io/redhat-performance/test-gohttp-probe:v0.0.1", help="The container image to use")
   parser.add_argument("--container-port", type=int, default=8000,
                       help="The starting container port to expose (PORT Env Var)")
   parser.add_argument('-e', "--container-env", nargs='*', default=default_container_env,

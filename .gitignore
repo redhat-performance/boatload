@@ -130,3 +130,7 @@ dmypy.json
 
 # CSV result files
 *.csv
+
+# PBR generated files
+AUTHORS
+ChangeLog
