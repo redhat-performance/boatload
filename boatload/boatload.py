@@ -46,14 +46,14 @@ global:
     type: elastic
 
 jobs:
-  - name: jetkubeload
+  - name: boatload
     jobType: create
     jobIterations: {{ namespaces }}
     qps: 20
     burst: 40
     namespacedIterations: true
     cleanup: true
-    namespace: jetkubeload
+    namespace: boatload
     podWait: false
     waitWhenFinished: true
     verifyObjects: true
@@ -131,7 +131,7 @@ global:
     type: elastic
 
 jobs:
-- name: cleanup-jetkubeload
+- name: cleanup-boatload
   jobType: delete
   waitForDeletion: true
   qps: 10
@@ -139,27 +139,27 @@ jobs:
   objects:
 
   - kind: ConfigMap
-    labelSelector: {kube-burner-job: jetkubeload}
+    labelSelector: {kube-burner-job: boatload}
     apiVersion: v1
 
   - kind: Secret
-    labelSelector: {kube-burner-job: jetkubeload}
+    labelSelector: {kube-burner-job: boatload}
     apiVersion: v1
 
   - kind: Route
-    labelSelector: {kube-burner-job: jetkubeload}
+    labelSelector: {kube-burner-job: boatload}
     apiVersion: route.openshift.io/v1
 
   - kind: Service
-    labelSelector: {kube-burner-job: jetkubeload}
+    labelSelector: {kube-burner-job: boatload}
     apiVersion: v1
 
   - kind: Deployment
-    labelSelector: {kube-burner-job: jetkubeload}
+    labelSelector: {kube-burner-job: boatload}
     apiVersion: apps/v1
 
   - kind: Namespace
-    labelSelector: {kube-burner-job: jetkubeload}
+    labelSelector: {kube-burner-job: boatload}
     apiVersion: v1
 """
 
@@ -182,23 +182,23 @@ workload_deployment = """---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: jetkubeload-{{ .Iteration }}-{{ .Replica }}-{{ .JobName }}
+  name: boatload-{{ .Iteration }}-{{ .Replica }}-{{ .JobName }}
 spec:
   replicas: {{ .pod_replicas }}
   selector:
     matchLabels:
-      app: jetkubeload-{{ .Iteration }}-{{ .Replica }}
+      app: boatload-{{ .Iteration }}-{{ .Replica }}
   strategy:
     resources: {}
   template:
     metadata:
       labels:
-        app: jetkubeload-{{ .Iteration }}-{{ .Replica }}
+        app: boatload-{{ .Iteration }}-{{ .Replica }}
     spec:
       containers:
       {{ $data := . }}
       {{ range $index, $element := sequence 1 .containers }}
-      - name: jetkubeload-container-{{ $element }}
+      - name: boatload-{{ $element }}
         image: {{ $data.image }}
         ports:
         - containerPort: {{ add $data.starting_port $element }}
@@ -231,7 +231,7 @@ spec:
           {{ . }}
           {{ end }}
             port: {{ add $data.starting_port $element }}
-          {{ end }}
+        {{ end }}
         {{ if $data.enable_liveness_probe }}
         livenessProbe:
           {{ range $data.liveness_probe_args }}
@@ -263,7 +263,7 @@ spec:
       {{ $cm_index := add $d_cm_count $element }}
       - name: cm-{{ $element }}
         configMap:
-          name: jetkubeload-{{ $data.Iteration }}-{{ $cm_index }}-{{ $data.JobName }}
+          name: boatload-{{ $data.Iteration }}-{{ $cm_index }}-{{ $data.JobName }}
       {{ end }}
       {{ range $index, $element := sequence 1 .secrets }}
       {{ $d_index := add $data.Replica -1 }}
@@ -271,17 +271,17 @@ spec:
       {{ $s_index := add $d_s_count $element }}
       - name: secret-{{ $element }}
         secret:
-          secretName: jetkubeload-{{ $data.Iteration }}-{{ $s_index }}-{{ $data.JobName }}
+          secretName: boatload-{{ $data.Iteration }}-{{ $s_index }}-{{ $data.JobName }}
       {{ end }}
       nodeSelector:
         {{ .default_selector }}
         {{ range $index, $element := sequence 1 .shared_selectors }}
-        jetkubeloads-{{ $element }}: "true"
+        boatloads-{{ $element }}: "true"
         {{ end }}
         {{ $data := . }}
         {{ range $index, $element := sequence 1 $data.unique_selectors }}
         {{ $first := multiply $data.unique_selector_offset $index }}
-        jetkubeloadu-{{ add $first $data.Iteration }}: "true"
+        boatloadu-{{ add $first $data.Iteration }}: "true"
         {{ end }}
       {{ if .tolerations }}
       tolerations:
@@ -301,10 +301,10 @@ workload_service = """---
 apiVersion: v1
 kind: Service
 metadata:
-  name: jetkubeload-{{ .Iteration }}-{{ .Replica }}-{{ .JobName }}
+  name: boatload-{{ .Iteration }}-{{ .Replica }}-{{ .JobName }}
 spec:
   selector:
-    app: jetkubeload-{{ .Iteration }}-{{ .Replica }}
+    app: boatload-{{ .Iteration }}-{{ .Replica }}
   ports:
     {{ $data := . }}
     {{ range $index, $element := sequence 1 .ports }}
@@ -319,34 +319,34 @@ workload_route = """---
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: jetkubeload-{{ .Iteration }}-{{ .Replica }}-{{ .JobName }}
+  name: boatload-{{ .Iteration }}-{{ .Replica }}-{{ .JobName }}
 spec:
   tls:
     termination: edge
   to:
-    name: jetkubeload-{{ .Iteration }}-{{ .Replica }}-{{ .JobName }}
+    name: boatload-{{ .Iteration }}-{{ .Replica }}-{{ .JobName }}
 """
 
 workload_configmap = """---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: jetkubeload-{{ .Iteration }}-{{ .Replica }}-{{ .JobName }}
+  name: boatload-{{ .Iteration }}-{{ .Replica }}-{{ .JobName }}
 data:
-  jetkubeload-{{ .Iteration }}-{{ .Replica }}-{{ .JobName }}: "Random data"
+  boatload-{{ .Iteration }}-{{ .Replica }}-{{ .JobName }}: "Random data"
 """
 
 workload_secret = """---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: jetkubeload-{{ .Iteration }}-{{ .Replica }}-{{ .JobName }}
+  name: boatload-{{ .Iteration }}-{{ .Replica }}-{{ .JobName }}
 data:
-  jetkubeload-{{ .Iteration }}-{{ .Replica }}-{{ .JobName }}: UmFuZG9tIGRhdGEK
+  boatload-{{ .Iteration }}-{{ .Replica }}-{{ .JobName }}: UmFuZG9tIGRhdGEK
 """
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s : %(levelname)s : %(message)s')
-logger = logging.getLogger('jetkubeload')
+logger = logging.getLogger('boatload')
 logging.Formatter.converter = time.gmtime
 
 
@@ -465,7 +465,7 @@ def apply_tc_netem(interface, start_vlan, end_vlan, impairments, dry_run=False):
       tc_command.extend(impairment)
     rc, _ = command(tc_command, dry_run)
     if rc != 0:
-      logger.error("jetkubeload applying impairments failed, tc rc: {}".format(rc))
+      logger.error("boatload applying impairments failed, tc rc: {}".format(rc))
       sys.exit(1)
 
 
@@ -475,7 +475,7 @@ def remove_tc_netem(interface, start_vlan, end_vlan, dry_run=False, ignore_error
     tc_command = ["tc", "qdisc", "del", "dev", "{}.{}".format(interface, vlan), "root", "netem"]
     rc, _ = command(tc_command, dry_run)
     if rc != 0 and not ignore_errors:
-      logger.error("jetkubeload removing impairments failed, tc rc: {}".format(rc))
+      logger.error("boatload removing impairments failed, tc rc: {}".format(rc))
       sys.exit(1)
 
 
@@ -487,13 +487,13 @@ def flap_links_down(interface, start_vlan, end_vlan, dry_run, iptables, network)
           "iptables", "-A", "FORWARD", "-j", "DROP", "-i", "{}.{}".format(interface, vlan), "-d", network]
       rc, _ = command(iptables_command, dry_run)
       if rc != 0:
-        logger.error("jetkubeload, iptables rc: {}".format(rc))
+        logger.error("boatload, iptables rc: {}".format(rc))
         sys.exit(1)
     else:
       ip_command = ["ip", "link", "set", "{}.{}".format(interface, vlan), "down"]
       rc, _ = command(ip_command, dry_run)
       if rc != 0:
-        logger.error("jetkubeload, ip link set {} down rc: {}".format("{}.{}".format(interface, vlan), rc))
+        logger.error("boatload, ip link set {} down rc: {}".format("{}.{}".format(interface, vlan), rc))
         sys.exit(1)
 
 
@@ -505,13 +505,13 @@ def flap_links_up(interface, start_vlan, end_vlan, dry_run, iptables, network, i
           "iptables", "-D", "FORWARD", "-j", "DROP", "-i", "{}.{}".format(interface, vlan), "-d", network]
       rc, _ = command(iptables_command, dry_run)
       if rc != 0 and not ignore_errors:
-        logger.error("jetkubeload, iptables rc: {}".format(rc))
+        logger.error("boatload, iptables rc: {}".format(rc))
         sys.exit(1)
     else:
       ip_command = ["ip", "link", "set", "{}.{}".format(interface, vlan), "up"]
       rc, _ = command(ip_command, dry_run)
       if rc != 0 and not ignore_errors:
-        logger.error("jetkubeload, ip link set {} up rc: {}".format("{}.{}".format(interface, vlan), rc))
+        logger.error("boatload, ip link set {} up rc: {}".format("{}.{}".format(interface, vlan), rc))
         sys.exit(1)
 
 
@@ -548,8 +548,8 @@ def main():
   ]
 
   parser = argparse.ArgumentParser(
-      description="Run jetkubeload",
-      prog="jetkubeload.py", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+      description="Run boatload",
+      prog="boatload.py", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
   # Phase arguments
   parser.add_argument("--no-workload-phase", action="store_true", default=False, help="Disables workload phase")
@@ -621,8 +621,8 @@ def main():
   # Indexing arguments
   parser.add_argument(
       "--index-server", type=str, default="", help="ElasticSearch server (Ex https://user:password@example.org:9200)")
-  parser.add_argument("--default-index", type=str, default="jetkubeload-default-test", help="Default index")
-  parser.add_argument("--measurements-index", type=str, default="jetkubeload-measurements-test", help="Measurements index")
+  parser.add_argument("--default-index", type=str, default="boatload-default-test", help="Default index")
+  parser.add_argument("--measurements-index", type=str, default="boatload-measurements-test", help="Measurements index")
   parser.add_argument("--prometheus-url", type=str, default="", help="Cluster prometheus URL")
   parser.add_argument("--prometheus-token", type=str, default="", help="Token to access prometheus")
 
@@ -641,7 +641,7 @@ def main():
     logger.setLevel(logging.DEBUG)
 
   phase_break()
-  logger.info("jetkubeload")
+  logger.info("boatload")
   phase_break()
   logger.debug("CLI Args: {}".format(cliargs))
 
@@ -866,7 +866,7 @@ def main():
     kb_cmd = ["kube-burner", "init", "-c", "workload-create.yml", "--uuid", workload_UUID]
     rc, _ = command(kb_cmd, cliargs.dry_run, tmp_directory)
     if rc != 0:
-      logger.error("jetkubeload (workload-create.yml) failed, kube-burner rc: {}".format(rc))
+      logger.error("boatload (workload-create.yml) failed, kube-burner rc: {}".format(rc))
       sys.exit(1)
     workload_end_time = time.time()
     logger.info("Workload phase complete")
@@ -950,7 +950,7 @@ def main():
     oc_cmd = ["oc", "get", "ev", "-n", "default", "--field-selector", "reason=NodeNotReady", "-o", "json"]
     rc, output = command(oc_cmd, cliargs.dry_run, no_log=True)
     if rc != 0:
-      logger.error("jetkubeload, oc get ev rc: {}".format(rc))
+      logger.error("boatload, oc get ev rc: {}".format(rc))
       sys.exit(1)
     if not cliargs.dry_run:
       json_data = json.loads(output)
@@ -974,7 +974,7 @@ def main():
     oc_cmd = ["oc", "get", "ev", "-n", "default", "--field-selector", "reason=NodeReady", "-o", "json"]
     rc, output = command(oc_cmd, cliargs.dry_run, no_log=True)
     if rc != 0:
-      logger.error("jetkubeload, oc get ev rc: {}".format(rc))
+      logger.error("boatload, oc get ev rc: {}".format(rc))
       sys.exit(1)
     if not cliargs.dry_run:
       json_data = json.loads(output)
@@ -996,12 +996,12 @@ def main():
     phase_break()
     logger.info("Post measurement pod eviction count")
     phase_break()
-    ns_pattern = re.compile("jetkubeload-[0-9]+")
+    ns_pattern = re.compile("boatload-[0-9]+")
     eviction_pattern = re.compile("Marking for deletion Pod")
     oc_cmd = ["oc", "get", "ev", "-A", "--field-selector", "reason=TaintManagerEviction", "-o", "json"]
     rc, output = command(oc_cmd, cliargs.dry_run, no_log=True)
     if rc != 0:
-      logger.error("jetkubeload, oc get ev rc: {}".format(rc))
+      logger.error("boatload, oc get ev rc: {}".format(rc))
       sys.exit(1)
     if not cliargs.dry_run:
       json_data = json.loads(output)
@@ -1013,7 +1013,7 @@ def main():
     oc_cmd = ["oc", "get", "ev", "-A", "--field-selector", "reason=Killing", "-o", "json"]
     rc, output = command(oc_cmd, cliargs.dry_run, no_log=True)
     if rc != 0:
-      logger.error("jetkubeload, oc get ev rc: {}".format(rc))
+      logger.error("boatload, oc get ev rc: {}".format(rc))
       sys.exit(1)
     if not cliargs.dry_run:
       json_data = json.loads(output)
@@ -1022,8 +1022,8 @@ def main():
     for item in json_data['items']:
       if ns_pattern.search(item['involvedObject']['namespace']):
         killed_pod += 1
-    logger.info("jetkubeload-* pods marked for deletion by Taint Manager: {}".format(marked_evictions))
-    logger.info("jetkubeload-* pods killed: {}".format(killed_pod))
+    logger.info("boatload-* pods marked for deletion by Taint Manager: {}".format(marked_evictions))
+    logger.info("boatload-* pods killed: {}".format(killed_pod))
 
   # Cleanup Phase
   if not cliargs.no_cleanup_phase:
@@ -1048,7 +1048,7 @@ def main():
     kb_cmd = ["kube-burner", "init", "-c", "workload-delete.yml", "--uuid", workload_UUID]
     rc, _ = command(kb_cmd, cliargs.dry_run, tmp_directory)
     if rc != 0:
-      logger.error("jetkubeload (workload-delete.yml) failed, kube-burner rc: {}".format(rc))
+      logger.error("boatload (workload-delete.yml) failed, kube-burner rc: {}".format(rc))
       sys.exit(1)
     cleanup_end_time = time.time()
     logger.info("Cleanup phase complete")
@@ -1098,7 +1098,7 @@ def main():
         "-m", "{}/metrics-aggregated.yaml".format(tmp_directory), "-t", index_prometheus_token]
     rc, _ = command(kb_cmd, cliargs.dry_run, tmp_directory, mask_arg=16)
     if rc != 0:
-      logger.error("jetkubeload (workload-index.yml) failed, kube-burner rc: {}".format(rc))
+      logger.error("boatload (workload-index.yml) failed, kube-burner rc: {}".format(rc))
       sys.exit(1)
 
     index_end_time = time.time()
@@ -1107,7 +1107,7 @@ def main():
   # Write results on the test/workload
   end_time = time.time()
   phase_break()
-  logger.info("jetkubeload Stats")
+  logger.info("boatload Stats")
 
   workload_duration = 0
   measurement_duration = 0
@@ -1120,8 +1120,8 @@ def main():
     logger.info("* Number of NodeNotReady events reported by node-controller: {}".format(nodenotready_node_controller_count))
     logger.info("* Number of NodeNotReady events reported by kubelet: {}".format(nodenotready_kubelet_count))
     logger.info("* Number of NodeReady events: {}".format(nodeready_count))
-    logger.info("* Number of jetkubeload pods marked for deletion (TaintManagerEviction): {}".format(marked_evictions))
-    logger.info("* Number of jetkubeload pods killed: {}".format(killed_pod))
+    logger.info("* Number of boatload pods marked for deletion (TaintManagerEviction): {}".format(marked_evictions))
+    logger.info("* Number of boatload pods killed: {}".format(killed_pod))
   if not cliargs.no_workload_phase:
     workload_duration = round(workload_end_time - workload_start_time, 1)
     logger.info("Workload phase duration: {}".format(workload_duration))

@@ -26,7 +26,7 @@ probes="--startup-probe http,0,10,1,12 --liveness-probe http,0,10,1,3 --readines
 
 echo "$(date -u +%Y%m%d-%H%M%S) - node density 6.1 - ${total_pods} namespaces, 1 deploy, 1 pod, 1 container (gohttp), 1 service, 1 route, 10s period probes, 0 configmaps, 0 secrets"
 logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-6.1.log"
-../../jetkubeload/jetkubeload.py ${dryrun} ${csvfile} --csv-title "${total_pods}n-1d-1p-1c-gohttp" -n ${total_pods} -d 1 -p 1 -c 1 -m 0 --secrets 0 ${probes} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
+../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_pods}n-1d-1p-1c-gohttp" -n ${total_pods} -d 1 -p 1 -c 1 -m 0 --secrets 0 ${probes} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
 echo "$(date -u +%Y%m%d-%H%M%S) - node density 6.1 complete, sleeping ${sleep_period}"
 # sleep ${sleep_period}
 

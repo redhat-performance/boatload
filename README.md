@@ -1,4 +1,4 @@
-# jetlag-workload
+# boatload
 
 Workloads for OpenShift/Kubernetes clusters
 
@@ -7,5 +7,5 @@ Workloads for OpenShift/Kubernetes clusters
 $ virtualenv .venv
 $ source .venv/bin/activate
 $ pip3 install -r requirements.txt
-$ ./jetkubeload/jetkubeload.py -h
+$ ./boatload/boatload.py -h
 ```

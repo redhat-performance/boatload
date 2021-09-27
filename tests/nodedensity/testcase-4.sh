@@ -30,7 +30,7 @@ for (( index=0; index<${#namespaces[@]}; index++)); do
   test_index=$((${test_index} + 1))
   echo "$(date -u +%Y%m%d-%H%M%S) - node density 4.${test_index} - ${namespaces[${index}]} namespace(s), 1 deploy, ${pods[${index}]} pod(s), 1 container (gohttp), 1 service, probes, 0 configmaps, 0 secrets"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-4.1.log"
-  ../../jetkubeload/jetkubeload.py ${dryrun} ${csvfile} --csv-title "${namespaces[${index}]}n-1d-${pods[${index}]}p-1c-gohttp" -n ${namespaces[${index}]} -d 1 -p ${pods[${index}]} -c 1 -l -m 0 --secrets 0 ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
+  ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${namespaces[${index}]}n-1d-${pods[${index}]}p-1c-gohttp" -n ${namespaces[${index}]} -d 1 -p ${pods[${index}]} -c 1 -l -m 0 --secrets 0 ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density 4.${test_index} complete, sleeping ${sleep_period}"
   sleep ${sleep_period}
   echo "****************************************************************************************************************************************"
@@ -42,7 +42,7 @@ for (( index=0; index<${#namespaces[@]}; index++)); do
   test_index=$((${test_index} + 1))
   echo "$(date -u +%Y%m%d-%H%M%S) - node density 4.${test_index} - ${namespaces[${index}]} namespace(s), 1 deploy, ${pods[${index}]} pod(s), 1 container (pause), 1 service, probes, 0 configmaps, 0 secrets"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-4.1.log"
-  ../../jetkubeload/jetkubeload.py ${dryrun} ${csvfile} --csv-title "${namespaces[${index}]}n-1d-${pods[${index}]}p-1c-pause" -n ${namespaces[${index}]} -d 1 -p ${pods[${index}]} -c 1 -l -m 0 --secrets 0 ${image} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
+  ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${namespaces[${index}]}n-1d-${pods[${index}]}p-1c-pause" -n ${namespaces[${index}]} -d 1 -p ${pods[${index}]} -c 1 -l -m 0 --secrets 0 ${image} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density 4.${test_index} complete, sleeping ${sleep_period}"
   sleep ${sleep_period}
   echo "****************************************************************************************************************************************"
@@ -54,7 +54,7 @@ for (( index=0; index<${#namespaces[@]}; index++)); do
   test_index=$((${test_index} + 1))
   echo "$(date -u +%Y%m%d-%H%M%S) - node density 4.${test_index} - ${namespaces[${index}]} namespace(s), 1 deploy, ${pods[${index}]} pod(s), 1 container (hello-kubernetes), 1 service, probes, 0 configmaps, 0 secrets"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-4.1.log"
-  ../../jetkubeload/jetkubeload.py ${dryrun} ${csvfile} --csv-title "${namespaces[${index}]}n-1d-${pods[${index}]}p-1c-hello" -n ${namespaces[${index}]} -d 1 -p ${pods[${index}]} -c 1 -l -m 0 --secrets 0 ${image} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
+  ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${namespaces[${index}]}n-1d-${pods[${index}]}p-1c-hello" -n ${namespaces[${index}]} -d 1 -p ${pods[${index}]} -c 1 -l -m 0 --secrets 0 ${image} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density 4.${test_index} complete, sleeping ${sleep_period}"
   sleep ${sleep_period}
   echo "****************************************************************************************************************************************"

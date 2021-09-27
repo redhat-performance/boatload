@@ -28,7 +28,7 @@ for (( arg_index=0; arg_index<${#options[@]}; arg_index++)); do
     test_index=$((${test_index} + 1))
     echo "$(date -u +%Y%m%d-%H%M%S) - node density 1.${test_index} - ${container_count} container, ${tc_titles[$arg_index]}, no configmaps or secrets"
     logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-1.${test_index}.log"
-    ../../jetkubeload/jetkubeload.py ${dryrun} ${csvfile} --csv-title "${container_count}c-${csv_titles[$arg_index]}" -n 1 -d 1 -p 1 -c ${container_count} ${options[$arg_index]} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
+    ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${container_count}c-${csv_titles[$arg_index]}" -n 1 -d 1 -p 1 -c ${container_count} ${options[$arg_index]} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
     echo "$(date -u +%Y%m%d-%H%M%S) - node density 1.${test_index} complete, sleeping ${sleep_period}"
     sleep ${sleep_period}
     echo "****************************************************************************************************************************************"

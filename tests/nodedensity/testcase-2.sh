@@ -25,7 +25,7 @@ for obj_count in ${obj_counts}; do
   test_index=$((${test_index} + 1))
   echo "$(date -u +%Y%m%d-%H%M%S) - node density 2.${test_index} - 1 container, 1 service, probes, ${obj_count} configmap(s), 0 secrets"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-2.${test_index}.log"
-  ../../jetkubeload/jetkubeload.py ${dryrun} ${csvfile} --csv-title "${obj_count}cm-0s" -n 1 -d 1 -p 1 -c 1 -l -m ${obj_count} --secrets 0 ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
+  ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${obj_count}cm-0s" -n 1 -d 1 -p 1 -c 1 -l -m ${obj_count} --secrets 0 ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density 2.${test_index} complete, sleeping ${sleep_period}"
   sleep ${sleep_period}
   echo "****************************************************************************************************************************************"
@@ -36,7 +36,7 @@ for obj_count in ${obj_counts}; do
   test_index=$((${test_index} + 1))
   echo "$(date -u +%Y%m%d-%H%M%S) - node density 2.${test_index} - 1 container, 1 service, probes, 0 configmaps, ${obj_count} secret(s)"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-2.${test_index}.log"
-  ../../jetkubeload/jetkubeload.py ${dryrun} ${csvfile} --csv-title "0cm-${obj_count}s" -n 1 -d 1 -p 1 -c 1 -l -m 0 --secrets ${obj_count} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
+  ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "0cm-${obj_count}s" -n 1 -d 1 -p 1 -c 1 -l -m 0 --secrets ${obj_count} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density 2.${test_index} complete, sleeping ${sleep_period}"
   sleep ${sleep_period}
   echo "****************************************************************************************************************************************"
@@ -47,7 +47,7 @@ for obj_count in ${obj_counts}; do
   test_index=$((${test_index} + 1))
   echo "$(date -u +%Y%m%d-%H%M%S) - node density 2.${test_index} - 1 container, 1 service, probes, ${obj_count} configmap(s), ${obj_count} secret(s)"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-2.${test_index}.log"
-  ../../jetkubeload/jetkubeload.py ${dryrun} ${csvfile} --csv-title "${obj_count}cm-${obj_count}s" -n 1 -d 1 -p 1 -c 1 -l -m ${obj_count} --secrets ${obj_count} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
+  ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${obj_count}cm-${obj_count}s" -n 1 -d 1 -p 1 -c 1 -l -m ${obj_count} --secrets ${obj_count} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density 2.${test_index} complete, sleeping ${sleep_period}"
   sleep ${sleep_period}
   echo "****************************************************************************************************************************************"
