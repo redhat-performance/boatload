@@ -67,10 +67,12 @@ usage: boatload.py [-h] [--no-workload-phase] [--no-measurement-phase] [--no-cle
                    [-i CONTAINER_IMAGE] [--container-port CONTAINER_PORT] [-e [CONTAINER_ENV ...]] [-m CONFIGMAPS] [--secrets SECRETS] [--cpu-requests CPU_REQUESTS]
                    [--memory-requests MEMORY_REQUESTS] [--cpu-limits CPU_LIMITS] [--memory-limits MEMORY_LIMITS] [--startup-probe STARTUP_PROBE] [--liveness-probe LIVENESS_PROBE]
                    [--readiness-probe READINESS_PROBE] [--startup-probe-endpoint STARTUP_PROBE_ENDPOINT] [--liveness-probe-endpoint LIVENESS_PROBE_ENDPOINT]
-                   [--readiness-probe-endpoint READINESS_PROBE_ENDPOINT] [--no-probes] [--default-selector DEFAULT_SELECTOR] [-s SHARED_SELECTORS] [-u UNIQUE_SELECTORS] [-o OFFSET]
-                   [--no-tolerations] [-D DURATION] [-I INTERFACE] [-S START_VLAN] [-E END_VLAN] [-L LATENCY] [-P PACKET_LOSS] [-B BANDWIDTH_LIMIT] [-F LINK_FLAP_DOWN] [-U LINK_FLAP_UP]
-                   [-T] [-N LINK_FLAP_NETWORK] [--index-server INDEX_SERVER] [--default-index DEFAULT_INDEX] [--measurements-index MEASUREMENTS_INDEX] [--prometheus-url PROMETHEUS_URL]
-                   [--prometheus-token PROMETHEUS_TOKEN] [--csv-file CSV_FILE] [--csv-title CSV_TITLE] [--debug] [--dry-run] [--reset]
+                   [--readiness-probe-endpoint READINESS_PROBE_ENDPOINT] [--startup-probe-exec-command STARTUP_PROBE_EXEC_COMMAND]
+                   [--liveness-probe-exec-command LIVENESS_PROBE_EXEC_COMMAND] [--readiness-probe-exec-command READINESS_PROBE_EXEC_COMMAND] [--no-probes]
+                   [--default-selector DEFAULT_SELECTOR] [-s SHARED_SELECTORS] [-u UNIQUE_SELECTORS] [-o OFFSET] [--no-tolerations] [-D DURATION] [-I INTERFACE] [-S START_VLAN]
+                   [-E END_VLAN] [-L LATENCY] [-P PACKET_LOSS] [-B BANDWIDTH_LIMIT] [-F LINK_FLAP_DOWN] [-U LINK_FLAP_UP] [-T] [-N LINK_FLAP_NETWORK] [--index-server INDEX_SERVER]
+                   [--default-index DEFAULT_INDEX] [--measurements-index MEASUREMENTS_INDEX] [--prometheus-url PROMETHEUS_URL] [--prometheus-token PROMETHEUS_TOKEN] [--csv-file CSV_FILE]
+                   [--csv-title CSV_TITLE] [--debug] [--dry-run] [--reset]
 
 Run boatload
 
@@ -91,7 +93,7 @@ optional arguments:
   -c CONTAINERS, --containers CONTAINERS
                         Number of containers per pod replica to create (default: 1)
   -i CONTAINER_IMAGE, --container-image CONTAINER_IMAGE
-                        The container image to use (default: quay.io/redhat-performance/test-gohttp-probe:v0.0.1)
+                        The container image to use (default: quay.io/redhat-performance/test-gohttp-probe:v0.0.2)
   --container-port CONTAINER_PORT
                         The starting container port to expose (PORT Env Var) (default: 8000)
   -e [CONTAINER_ENV ...], --container-env [CONTAINER_ENV ...]
@@ -120,6 +122,12 @@ optional arguments:
                         livenessProbe endpoint (default: /livez)
   --readiness-probe-endpoint READINESS_PROBE_ENDPOINT
                         readinessProbe endpoint (default: /readyz)
+  --startup-probe-exec-command STARTUP_PROBE_EXEC_COMMAND
+                        startupProbe exec command (default: test -f /tmp/startup)
+  --liveness-probe-exec-command LIVENESS_PROBE_EXEC_COMMAND
+                        livenessProbe exec command (default: test -f /tmp/liveness)
+  --readiness-probe-exec-command READINESS_PROBE_EXEC_COMMAND
+                        readinessProbe exec command (default: test -f /tmp/readiness)
   --no-probes           Disable all probes (default: False)
   --default-selector DEFAULT_SELECTOR
                         Default node-selector (default: jetlag: 'true')

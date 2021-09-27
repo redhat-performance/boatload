@@ -88,6 +88,9 @@ jobs:
         startup_probe_args: {{ startup_probe_args }}
         liveness_probe_args: {{ liveness_probe_args }}
         readiness_probe_args: {{ readiness_probe_args }}
+        startup_probe_port: {{ startup_probe_port_enable }}
+        liveness_probe_port: {{ liveness_probe_port_enable }}
+        readiness_probe_port: {{ readiness_probe_port_enable }}
         default_selector: "{{ default_selector }}"
         shared_selectors: {{ shared_selectors }}
         unique_selectors: {{ unique_selectors }}
@@ -230,21 +233,27 @@ spec:
           {{ range $data.startup_probe_args }}
           {{ . }}
           {{ end }}
+          {{ if $data.startup_probe_port }}
             port: {{ add $data.starting_port $element }}
+          {{ end }}
         {{ end }}
         {{ if $data.enable_liveness_probe }}
         livenessProbe:
           {{ range $data.liveness_probe_args }}
           {{ . }}
           {{ end }}
+          {{ if $data.liveness_probe_port }}
             port: {{ add $data.starting_port $element }}
+          {{ end }}
         {{ end }}
         {{ if $data.enable_readiness_probe }}
         readinessProbe:
           {{ range $data.readiness_probe_args }}
           {{ . }}
           {{ end }}
+          {{ if $data.readiness_probe_port }}
             port: {{ add $data.starting_port $element }}
+          {{ end }}
         {{ end }}
         volumeMounts:
         {{ range $index, $element := sequence 1 $data.configmaps }}
@@ -408,7 +417,7 @@ def parse_container_env_args(args):
   return container_env_args
 
 
-def parse_probe_args(args, path):
+def parse_probe_args(args, path, command):
   split_args = args.split(",")
   prefixes = ["initialDelaySeconds:", "periodSeconds:", "timeoutSeconds:", "failureThreshold:", "successThreshold:"]
   probe_args = []
@@ -429,6 +438,10 @@ def parse_probe_args(args, path):
     probe_args.extend(["httpGet:", "  path: {}".format(path)])
   elif split_args[0].lower() == "tcp":
     probe_args.append("tcpSocket:")
+  elif split_args[0].lower() == "exec":
+    probe_args.extend(["exec:", "  command:"])
+    # Split the command by "\n" and attach the prefix of "  - " to each line
+    probe_args.extend(list("  - " + line for line in command.split("\n")))
   elif split_args[0].lower() == "off":
     return []
   else:
@@ -567,7 +580,7 @@ def main():
 
   # Workload container image, port, environment, and resources arguments
   parser.add_argument("-i", "--container-image", type=str,
-                      default="quay.io/redhat-performance/test-gohttp-probe:v0.0.1", help="The container image to use")
+                      default="quay.io/redhat-performance/test-gohttp-probe:v0.0.2", help="The container image to use")
   parser.add_argument("--container-port", type=int, default=8000,
                       help="The starting container port to expose (PORT Env Var)")
   parser.add_argument('-e', "--container-env", nargs='*', default=default_container_env,
@@ -589,6 +602,9 @@ def main():
   parser.add_argument("--startup-probe-endpoint", type=str, default="/livez", help="startupProbe endpoint")
   parser.add_argument("--liveness-probe-endpoint", type=str, default="/livez", help="livenessProbe endpoint")
   parser.add_argument("--readiness-probe-endpoint", type=str, default="/readyz", help="readinessProbe endpoint")
+  parser.add_argument("--startup-probe-exec-command", type=str, default="test\n-f\n/tmp/startup", help="startupProbe exec command")
+  parser.add_argument("--liveness-probe-exec-command", type=str, default="test\n-f\n/tmp/liveness", help="livenessProbe exec command")
+  parser.add_argument("--readiness-probe-exec-command", type=str, default="test\n-f\n/tmp/readiness", help="readinessProbe exec command")
   parser.add_argument("--no-probes", action="store_true", default=False, help="Disable all probes")
 
   # Workload node-selector/tolerations arguments
@@ -651,9 +667,12 @@ def main():
     cliargs.startup_probe = "off"
     cliargs.liveness_probe = "off"
     cliargs.readiness_probe = "off"
-  startup_probe_args = parse_probe_args(cliargs.startup_probe, cliargs.startup_probe_endpoint)
-  liveness_probe_args = parse_probe_args(cliargs.liveness_probe, cliargs.liveness_probe_endpoint)
-  readiness_probe_args = parse_probe_args(cliargs.readiness_probe, cliargs.readiness_probe_endpoint)
+  startup_probe_args = parse_probe_args(
+      cliargs.startup_probe, cliargs.startup_probe_endpoint, cliargs.startup_probe_exec_command)
+  liveness_probe_args = parse_probe_args(
+      cliargs.liveness_probe, cliargs.liveness_probe_endpoint, cliargs.liveness_probe_exec_command)
+  readiness_probe_args = parse_probe_args(
+      cliargs.readiness_probe, cliargs.readiness_probe_endpoint, cliargs.readiness_probe_exec_command)
 
   netem_impairments = parse_tc_netem_args(cliargs)
 
@@ -768,6 +787,9 @@ def main():
     su_probe = cliargs.startup_probe.split(",")[0]
     l_probe = cliargs.liveness_probe.split(",")[0]
     r_probe = cliargs.readiness_probe.split(",")[0]
+    startup_probe_port_enable = True if su_probe in ["tcp", "http"] else False
+    liveness_probe_port_enable = True if l_probe in ["tcp", "http"] else False
+    readiness_probe_port_enable = True if r_probe in ["tcp", "http"] else False
     logger.info("  * Probes: startup: {}, liveness: {}, readiness: {}".format(su_probe, l_probe, r_probe))
     logger.info("  * Default Node-Selector: {}".format(cliargs.default_selector))
     logger.info("  * {} Shared Node-Selectors".format(cliargs.shared_selectors))
@@ -834,6 +856,9 @@ def main():
         startup_probe_args=startup_probe_args,
         liveness_probe_args=liveness_probe_args,
         readiness_probe_args=readiness_probe_args,
+        startup_probe_port_enable=startup_probe_port_enable,
+        liveness_probe_port_enable=liveness_probe_port_enable,
+        readiness_probe_port_enable=readiness_probe_port_enable,
         default_selector=cliargs.default_selector,
         shared_selectors=cliargs.shared_selectors,
         unique_selectors=cliargs.unique_selectors,
