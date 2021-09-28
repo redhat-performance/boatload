@@ -53,7 +53,7 @@ echo "**************************************************************************
 # http probes
 for period in ${probe_periods}; do
   probes="--startup-probe http,0,${period},1,12 --liveness-probe http,0,${period},1,3 --readiness-probe http,0,${period},1,3,1"
-  probe_title="probes (${period}s period)s"
+  probe_title="http probes (${period}s period)s"
   echo "$(date -u +%Y%m%d-%H%M%S) - Probes: ${probes}"
 
   test_index=$((${test_index} + 1))
@@ -115,7 +115,7 @@ done
 # exec probes
 for period in ${probe_periods}; do
   probes="--startup-probe exec,0,${period},1,12 --liveness-probe exec,0,${period},1,3 --readiness-probe exec,0,${period},1,3,1"
-  probe_title="tcp probes (${period}s period)s"
+  probe_title="exec probes (${period}s period)s"
   echo "$(date -u +%Y%m%d-%H%M%S) - Probes: ${probes}"
 
   test_index=$((${test_index} + 1))
