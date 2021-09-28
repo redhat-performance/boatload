@@ -33,7 +33,7 @@ import uuid
 
 workload_create = """---
 global:
-  writeToFile: false
+  writeToFile: true
   measurements:
   - name: podLatency
     esIndex: {{ measurements_index }}
@@ -49,17 +49,17 @@ jobs:
   - name: boatload
     jobType: create
     jobIterations: {{ namespaces }}
-    qps: 20
-    burst: 40
+    namespace: boatload
     namespacedIterations: true
     cleanup: true
-    namespace: boatload
     podWait: false
     waitWhenFinished: true
-    verifyObjects: true
-    errorOnVerify: false
     jobIterationDelay: 0s
     jobPause: 0s
+    qps: 20
+    burst: 40
+    verifyObjects: true
+    errorOnVerify: false
     objects:
     - objectTemplate: workload-deployment-selector.yml
       replicas: {{ deployments }}
