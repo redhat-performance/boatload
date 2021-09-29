@@ -69,8 +69,8 @@ usage: boatload.py [-h] [--no-workload-phase] [--no-measurement-phase] [--no-cle
                    [--readiness-probe READINESS_PROBE] [--startup-probe-endpoint STARTUP_PROBE_ENDPOINT] [--liveness-probe-endpoint LIVENESS_PROBE_ENDPOINT]
                    [--readiness-probe-endpoint READINESS_PROBE_ENDPOINT] [--startup-probe-exec-command STARTUP_PROBE_EXEC_COMMAND]
                    [--liveness-probe-exec-command LIVENESS_PROBE_EXEC_COMMAND] [--readiness-probe-exec-command READINESS_PROBE_EXEC_COMMAND] [--no-probes]
-                   [--default-selector DEFAULT_SELECTOR] [-s SHARED_SELECTORS] [-u UNIQUE_SELECTORS] [-o OFFSET] [--no-tolerations] [-D DURATION] [-I INTERFACE] [-S START_VLAN]
-                   [-E END_VLAN] [-L LATENCY] [-P PACKET_LOSS] [-B BANDWIDTH_LIMIT] [-F LINK_FLAP_DOWN] [-U LINK_FLAP_UP] [-T] [-N LINK_FLAP_NETWORK] [--index-server INDEX_SERVER]
+                   [--default-selector DEFAULT_SELECTOR] [-s SHARED_SELECTORS] [-u UNIQUE_SELECTORS] [-o OFFSET] [--tolerations] [-D DURATION] [-I INTERFACE] [-S START_VLAN] [-E END_VLAN]
+                   [-L LATENCY] [-P PACKET_LOSS] [-B BANDWIDTH_LIMIT] [-F LINK_FLAP_DOWN] [-U LINK_FLAP_UP] [-T] [-N LINK_FLAP_NETWORK] [--index-server INDEX_SERVER]
                    [--default-index DEFAULT_INDEX] [--measurements-index MEASUREMENTS_INDEX] [--prometheus-url PROMETHEUS_URL] [--prometheus-token PROMETHEUS_TOKEN] [--csv-file CSV_FILE]
                    [--csv-title CSV_TITLE] [--debug] [--dry-run] [--reset]
 
@@ -137,7 +137,7 @@ optional arguments:
                         How many unique node-selectors to use (default: 0)
   -o OFFSET, --offset OFFSET
                         Offset for iterated unique node-selectors (default: 0)
-  --no-tolerations      Do not include RWN tolerations on pod spec (default: False)
+  --tolerations         Include RWN tolerations on pod spec (default: False)
   -D DURATION, --duration DURATION
                         Duration of measurent/impairment phase (Seconds) (default: 30)
   -I INTERFACE, --interface INTERFACE

@@ -612,8 +612,7 @@ def main():
   parser.add_argument("-s", "--shared-selectors", type=int, default=0, help="How many shared node-selectors to use")
   parser.add_argument("-u", "--unique-selectors", type=int, default=0, help="How many unique node-selectors to use")
   parser.add_argument("-o", "--offset", type=int, default=0, help="Offset for iterated unique node-selectors")
-  parser.add_argument(
-      "--no-tolerations", action="store_true", default=False, help="Do not include RWN tolerations on pod spec")
+  parser.add_argument("--tolerations", action="store_true", default=False, help="Include RWN tolerations on pod spec")
 
   # Measurement arguments
   parser.add_argument("-D", "--duration", type=int, default=30, help="Duration of measurent/impairment phase (Seconds)")
@@ -794,10 +793,10 @@ def main():
     logger.info("  * Default Node-Selector: {}".format(cliargs.default_selector))
     logger.info("  * {} Shared Node-Selectors".format(cliargs.shared_selectors))
     logger.info("  * {} Unique Node-Selectors".format(cliargs.unique_selectors))
-    if cliargs.no_tolerations:
-      logger.info("  * No tolerations")
-    else:
+    if cliargs.tolerations:
       logger.info("  * RWN tolerations")
+    else:
+      logger.info("  * No tolerations")
   if not cliargs.no_measurement_phase:
     logger.info("* Measurement Phase - {}s Duration".format(cliargs.duration))
     if len(netem_impairments) > 0:
@@ -863,7 +862,7 @@ def main():
         shared_selectors=cliargs.shared_selectors,
         unique_selectors=cliargs.unique_selectors,
         offset=cliargs.offset,
-        tolerations=(not cliargs.no_tolerations),
+        tolerations=cliargs.tolerations,
         service=cliargs.service,
         route=cliargs.route)
 
@@ -1169,7 +1168,7 @@ def main():
       total_time, cliargs.namespaces, cliargs.deployments, cliargs.pods, cliargs.containers, int(cliargs.service),
       int(cliargs.route), cliargs.configmaps, cliargs.secrets, cliargs.container_image, cliargs.cpu_requests,
       cliargs.memory_requests, cliargs.cpu_limits, cliargs.memory_limits, cliargs.startup_probe, cliargs.liveness_probe,
-      cliargs.readiness_probe, cliargs.shared_selectors, cliargs.unique_selectors, not cliargs.no_tolerations,
+      cliargs.readiness_probe, cliargs.shared_selectors, cliargs.unique_selectors, cliargs.tolerations,
       cliargs.duration, cliargs.interface, cliargs.start_vlan, cliargs.end_vlan, cliargs.latency, cliargs.packet_loss,
       cliargs.bandwidth_limit, cliargs.link_flap_down, cliargs.link_flap_up, cliargs.link_flap_firewall,
       cliargs.link_flap_network, index_prometheus_data, cliargs.dry_run, link_flap_count,
