@@ -636,8 +636,8 @@ def main():
   # Indexing arguments
   parser.add_argument(
       "--index-server", type=str, default="", help="ElasticSearch server (Ex https://user:password@example.org:9200)")
-  parser.add_argument("--default-index", type=str, default="boatload-default-test", help="Default index")
-  parser.add_argument("--measurements-index", type=str, default="boatload-measurements-test", help="Measurements index")
+  parser.add_argument("--default-index", type=str, default="boatload-default", help="Default index")
+  parser.add_argument("--measurements-index", type=str, default="boatload-default", help="Measurements index")
   parser.add_argument("--prometheus-url", type=str, default="", help="Cluster prometheus URL")
   parser.add_argument("--prometheus-token", type=str, default="", help="Token to access prometheus")
 
