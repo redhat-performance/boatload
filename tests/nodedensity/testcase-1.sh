@@ -21,7 +21,6 @@ options=("--no-probes" "-l --no-probes" "-l")
 tc_titles=("no service, no probes" "1 service, no probes" "1 service, probes")
 csv_titles=("0s-no_probes" "1s-no_probes" "1s-probes")
 containers="1 10 40 80 160"
-containers="160"
 test_index=0
 for (( arg_index=0; arg_index<${#options[@]}; arg_index++)); do
   for container_count in ${containers}; do
