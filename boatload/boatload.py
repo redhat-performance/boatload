@@ -34,6 +34,7 @@ import uuid
 workload_create = """---
 global:
   writeToFile: true
+  metricsDirectory: metrics
   measurements:
   - name: podLatency
     esIndex: {{ measurements_index }}
@@ -168,7 +169,8 @@ jobs:
 
 workload_index = """---
 global:
-  writeToFile: false
+  writeToFile: true
+  metricsDirectory: metrics
   measurements:
   - name: podLatency
     esIndex: {{ measurements_index }}
@@ -539,7 +541,11 @@ def write_csv_results(result_file_name, results):
       "cpu limits", "memory limits", "startup probe", "liveness probe", "readiness probe", "shared selectors",
       "unique selectors", "tolerations", "duration", "interface", "start vlan", "end vlan", "latency", "packet loss",
       "bandwidth limit", "flap down", "flap up", "firewall", "network", "indexed", "dry run", "flapped down",
-      "NodeNotReady node-controller", "NodeNotReady kubelet", "NodeReady", "TaintManagerEviction pods", "killed pods"]
+      "NodeNotReady node-controller", "NodeNotReady kubelet", "NodeReady", "TaintManagerEviction pods", "killed pods",
+      "kb_PodScheduled_avg", "kb_PodScheduled_max", "kb_PodScheduled_p50", "kb_PodScheduled_p95", "kb_PodScheduled_p99",
+      "kb_Initialized_avg", "kb_Initialized_max", "kb_Initialized_p50", "kb_Initialized_p95", "kb_Initialized_p99",
+      "kb_ContainersReady_avg", "kb_ContainersReady_max", "kb_ContainersReady_p50", "kb_ContainersReady_p95",
+      "kb_ContainersReady_p99", "kb_Ready_avg", "kb_Ready_max", "kb_Ready_p50", "kb_Ready_p95", "kb_Ready_p99",]
 
   logger.info("Writing results to {}".format(result_file_name))
   write_header = False
@@ -759,10 +765,11 @@ def main():
 
   logger.info("Scenario Phases:")
   if not cliargs.no_workload_phase:
+    logger.info("* Workload Phase")
     if index_measurement_data:
-      logger.info("* Workload Phase - Measurement indexing")
+      logger.info("  * Measurement index: {}".format(cliargs.measurements_index))
     else:
-      logger.info("* Workload Phase - No measurement indexing")
+      logger.info("  * No measurement indexing")
     logger.info("  * {} Namespace(s)".format(cliargs.namespaces))
     logger.info("  * {} Deployment(s) per namespace".format(cliargs.deployments))
     if cliargs.service:
@@ -816,12 +823,15 @@ def main():
     if len(netem_impairments) == 0 and not flap_links:
       logger.info("  * No impairments")
   if not cliargs.no_cleanup_phase:
+    logger.info("* Cleanup Phase")
     if index_measurement_data:
-      logger.info("* Cleanup Phase - Measurement indexing")
+      logger.info("  * Measurement index: {}".format(cliargs.measurements_index))
     else:
-      logger.info("* Cleanup Phase - No measurement indexing")
+      logger.info("  * No measurement indexing")
   if not cliargs.no_index_phase:
     logger.info("* Index Phase")
+    logger.info("  * Server: {}".format(cliargs.index_server))
+    logger.info("  * Index: {}".format(cliargs.default_index))
 
   # Workload UUID is used with both workload and cleanup phases
   workload_UUID = str(uuid.uuid4())
@@ -886,6 +896,7 @@ def main():
     with open("{}/workload-secret.yml".format(tmp_directory), "w") as file1:
       file1.writelines(workload_secret)
     logger.info("Created {}/workload-secret.yml".format(tmp_directory))
+    workload_measurements_json = "{}/metrics/boatload-podLatency-summary.json".format(tmp_directory)
 
     kb_cmd = ["kube-burner", "init", "-c", "workload-create.yml", "--uuid", workload_UUID]
     rc, _ = command(kb_cmd, cliargs.dry_run, tmp_directory)
@@ -1130,6 +1141,25 @@ def main():
 
   # Write results on the test/workload
   end_time = time.time()
+
+  # Read in podLatency summary from kube-burner
+  kb_measurements = ["PodScheduled", "Initialized", "ContainersReady", "Ready"]
+  kb_stats =  ["avg", "max", "P50", "P95", "P99"]
+  pod_latencies = {}
+  for measurement in kb_measurements:
+    pod_latencies[measurement] = {}
+    for stat in kb_stats:
+      pod_latencies[measurement][stat] = 0
+  if not cliargs.no_workload_phase:
+    logger.info("Reading {} for measurement data".format(workload_measurements_json))
+    with open(workload_measurements_json) as measurements_file:
+      measurements = json.load(measurements_file)
+    for measurement in measurements:
+      pod_latencies[measurement["quantileName"]] = {}
+      for stat in kb_stats:
+        pod_latencies[measurement['quantileName']][stat] = measurement[stat]
+  logger.debug("kube-burner podLatency measurements: {}".format(pod_latencies))
+
   phase_break()
   logger.info("boatload Stats")
 
@@ -1163,6 +1193,18 @@ def main():
   if not cliargs.no_index_phase:
     logger.info("Workload UUID: {}".format(workload_UUID))
 
+  header = ["start ts", "end ts", "start time", "end time", "title", "workload uuid", "workload duration",
+      "measurement duration", "cleanup duration", "index duration", "total duration", "namespaces", "deployments",
+      "pods", "containers", "services", "routes", "configmaps", "secrets", "image", "cpu requests", "memory requests",
+      "cpu limits", "memory limits", "startup probe", "liveness probe", "readiness probe", "shared selectors",
+      "unique selectors", "tolerations", "duration", "interface", "start vlan", "end vlan", "latency", "packet loss",
+      "bandwidth limit", "flap down", "flap up", "firewall", "network", "indexed", "dry run", "flapped down",
+      "NodeNotReady node-controller", "NodeNotReady kubelet", "NodeReady", "TaintManagerEviction pods", "killed pods",
+      "kb_PodScheduled_avg", "kb_PodScheduled_max", "kb_PodScheduled_p50", "kb_PodScheduled_p95", "kb_PodScheduled_p99",
+      "kb_Initialized_avg", "kb_Initialized_max", "kb_Initialized_p50", "kb_Initialized_p95", "kb_Initialized_p99",
+      "kb_ContainersReady_avg", "kb_ContainersReady_max", "kb_ContainersReady_p50", "kb_ContainersReady_p95",
+      "kb_ContainersReady_p99", "kb_Ready_avg", "kb_Ready_max", "kb_Ready_p50", "kb_Ready_p95", "kb_Ready_p99",]
+
   results = [start_time, end_time, datetime.utcfromtimestamp(start_time), datetime.utcfromtimestamp(end_time),
       cliargs.csv_title, workload_UUID, workload_duration, measurement_duration, cleanup_duration, index_duration,
       total_time, cliargs.namespaces, cliargs.deployments, cliargs.pods, cliargs.containers, int(cliargs.service),
@@ -1173,6 +1215,9 @@ def main():
       cliargs.bandwidth_limit, cliargs.link_flap_down, cliargs.link_flap_up, cliargs.link_flap_firewall,
       cliargs.link_flap_network, index_prometheus_data, cliargs.dry_run, link_flap_count,
       nodenotready_node_controller_count, nodenotready_kubelet_count, nodeready_count, marked_evictions, killed_pod]
+  for measurement in kb_measurements:
+    for stat in kb_stats:
+      results.append(pod_latencies[measurement][stat])
   write_csv_results(cliargs.csv_file, results)
 
 if __name__ == '__main__':
