@@ -649,7 +649,7 @@ def main():
 
   # CSV results file arguments:
   parser.add_argument("--csv-file", type=str, default="results.csv", help="Determines csv results file to append to")
-  parser.add_argument("--csv-title", type=str, default="", help="Determines title of row of data")
+  parser.add_argument("--csv-title", type=str, default="untitled", help="Determines title of row of data")
 
   # Other arguments
   parser.add_argument("--debug", action="store_true", default=False, help="Set log level debug")
@@ -832,6 +832,9 @@ def main():
     logger.info("* Index Phase")
     logger.info("  * Server: {}".format(cliargs.index_server))
     logger.info("  * Index: {}".format(cliargs.default_index))
+  logger.info("Results csv file: {}".format(cliargs.csv_file))
+  logger.info("Results title: {}".format(cliargs.csv_title))
+
 
   # Workload UUID is used with both workload and cleanup phases
   workload_UUID = str(uuid.uuid4())
@@ -1150,7 +1153,7 @@ def main():
     pod_latencies[measurement] = {}
     for stat in kb_stats:
       pod_latencies[measurement][stat] = 0
-  if not cliargs.no_workload_phase:
+  if not cliargs.no_workload_phase and not cliargs.dry_run:
     logger.info("Reading {} for measurement data".format(workload_measurements_json))
     with open(workload_measurements_json) as measurements_file:
       measurements = json.load(measurements_file)
@@ -1193,19 +1196,8 @@ def main():
   if not cliargs.no_index_phase:
     logger.info("Workload UUID: {}".format(workload_UUID))
 
-  header = ["start ts", "end ts", "start time", "end time", "title", "workload uuid", "workload duration",
-      "measurement duration", "cleanup duration", "index duration", "total duration", "namespaces", "deployments",
-      "pods", "containers", "services", "routes", "configmaps", "secrets", "image", "cpu requests", "memory requests",
-      "cpu limits", "memory limits", "startup probe", "liveness probe", "readiness probe", "shared selectors",
-      "unique selectors", "tolerations", "duration", "interface", "start vlan", "end vlan", "latency", "packet loss",
-      "bandwidth limit", "flap down", "flap up", "firewall", "network", "indexed", "dry run", "flapped down",
-      "NodeNotReady node-controller", "NodeNotReady kubelet", "NodeReady", "TaintManagerEviction pods", "killed pods",
-      "kb_PodScheduled_avg", "kb_PodScheduled_max", "kb_PodScheduled_p50", "kb_PodScheduled_p95", "kb_PodScheduled_p99",
-      "kb_Initialized_avg", "kb_Initialized_max", "kb_Initialized_p50", "kb_Initialized_p95", "kb_Initialized_p99",
-      "kb_ContainersReady_avg", "kb_ContainersReady_max", "kb_ContainersReady_p50", "kb_ContainersReady_p95",
-      "kb_ContainersReady_p99", "kb_Ready_avg", "kb_Ready_max", "kb_Ready_p50", "kb_Ready_p95", "kb_Ready_p99",]
-
-  results = [start_time, end_time, datetime.utcfromtimestamp(start_time), datetime.utcfromtimestamp(end_time),
+  # Milliseconds to Seconds * 1000 (For using the timestamp in Grafana, it must be a Unix timestamp in milliseconds)
+  results = [int(start_time * 1000), int(end_time * 1000), datetime.utcfromtimestamp(start_time), datetime.utcfromtimestamp(end_time),
       cliargs.csv_title, workload_UUID, workload_duration, measurement_duration, cleanup_duration, index_duration,
       total_time, cliargs.namespaces, cliargs.deployments, cliargs.pods, cliargs.containers, int(cliargs.service),
       int(cliargs.route), cliargs.configmaps, cliargs.secrets, cliargs.container_image, cliargs.cpu_requests,
