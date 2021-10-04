@@ -535,17 +535,19 @@ def phase_break():
 
 
 def write_csv_results(result_file_name, results):
-  header = ["start ts", "end ts", "start time", "end time", "title", "workload uuid", "workload duration",
-      "measurement duration", "cleanup duration", "index duration", "total duration", "namespaces", "deployments",
-      "pods", "containers", "services", "routes", "configmaps", "secrets", "image", "cpu requests", "memory requests",
-      "cpu limits", "memory limits", "startup probe", "liveness probe", "readiness probe", "shared selectors",
-      "unique selectors", "tolerations", "duration", "interface", "start vlan", "end vlan", "latency", "packet loss",
-      "bandwidth limit", "flap down", "flap up", "firewall", "network", "indexed", "dry run", "flapped down",
-      "NodeNotReady node-controller", "NodeNotReady kubelet", "NodeReady", "TaintManagerEviction pods", "killed pods",
-      "kb_PodScheduled_avg", "kb_PodScheduled_max", "kb_PodScheduled_p50", "kb_PodScheduled_p95", "kb_PodScheduled_p99",
-      "kb_Initialized_avg", "kb_Initialized_max", "kb_Initialized_p50", "kb_Initialized_p95", "kb_Initialized_p99",
-      "kb_ContainersReady_avg", "kb_ContainersReady_max", "kb_ContainersReady_p50", "kb_ContainersReady_p95",
-      "kb_ContainersReady_p99", "kb_Ready_avg", "kb_Ready_max", "kb_Ready_p50", "kb_Ready_p95", "kb_Ready_p99",]
+  header = ["start_ts", "workload_complete_ts", "measurement_complete_ts", "cleanup_complete_ts", "end_ts",
+      "start_time", "workload_complete_time", "measurement_complete_time", "cleanup_complete_time", "end_time",
+      "title", "workload_uuid", "workload_duration", "measurement_duration", "cleanup_duration", "index_duration",
+      "total_duration", "namespaces", "deployments", "pods", "containers", "services", "routes", "configmaps",
+      "secrets", "image", "cpu_requests", "memory_requests", "cpu_limits", "memory_limits", "startup_probe",
+      "liveness_probe", "readiness_probe", "shared_selectors", "unique_selectors", "tolerations", "duration",
+      "interface", "start_vlan", "end_vlan", "latency", "packet_loss", "bandwidth_limit", "flap_down", "flap_up",
+      "firewall", "network", "indexed", "dry_run", "flapped_down", "NodeNotReady_node-controller",
+      "NodeNotReady_kubelet", "NodeReady", "TaintManagerEviction_pods", "killed_pods", "kb_PodScheduled_avg",
+      "kb_PodScheduled_max", "kb_PodScheduled_p50", "kb_PodScheduled_p95", "kb_PodScheduled_p99", "kb_Initialized_avg",
+      "kb_Initialized_max", "kb_Initialized_p50", "kb_Initialized_p95", "kb_Initialized_p99", "kb_ContainersReady_avg",
+      "kb_ContainersReady_max", "kb_ContainersReady_p50", "kb_ContainersReady_p95", "kb_ContainersReady_p99",
+      "kb_Ready_avg", "kb_Ready_max", "kb_Ready_p50", "kb_Ready_p95", "kb_Ready_p99",]
 
   logger.info("Writing results to {}".format(result_file_name))
   write_header = False
@@ -841,10 +843,10 @@ def main():
 
   # Workload Phase
   if not cliargs.no_workload_phase:
-    phase_break()
-    logger.info("Workload phase starting")
-    phase_break()
     workload_start_time = time.time()
+    phase_break()
+    logger.info("Workload phase starting ({})".format(int(workload_start_time * 1000)))
+    phase_break()
 
     t = Template(workload_create)
     workload_create_rendered = t.render(
@@ -907,7 +909,7 @@ def main():
       logger.error("boatload (workload-create.yml) failed, kube-burner rc: {}".format(rc))
       sys.exit(1)
     workload_end_time = time.time()
-    logger.info("Workload phase complete")
+    logger.info("Workload phase complete ({})".format(int(workload_end_time * 1000)))
 
   # Measurement phase
   nodenotready_node_controller_count = 0
@@ -917,16 +919,17 @@ def main():
   killed_pod = 0
   marked_evictions = 0
   if not cliargs.no_measurement_phase:
-    phase_break()
-    logger.info("Measurement phase starting")
-    phase_break()
     measurement_start_time = time.time()
+    phase_break()
+    logger.info("Measurement phase starting ({})".format(int(measurement_start_time * 1000)))
+    phase_break()
     measurement_expected_end_time = measurement_start_time + cliargs.duration
 
     logger.info("Measurement phase start: {}, end: {}, duration: {}".format(
         datetime.utcfromtimestamp(measurement_start_time),
         datetime.utcfromtimestamp(measurement_expected_end_time),
         cliargs.duration))
+    logger.info("Measurement phase expected end timestamp: {}".format(int(measurement_expected_end_time * 1000)))
 
     if len(netem_impairments):
       apply_tc_netem(
@@ -978,7 +981,7 @@ def main():
           cliargs.end_vlan,
           cliargs.dry_run)
     measurement_end_time = time.time()
-    logger.info("Measurement phase complete")
+    logger.info("Measurement phase complete ({})".format(int(measurement_end_time * 1000)))
 
     # OpenShift by default keeps kubernetes events for 3 hours
     # Thus measurement periods beyond 3 hours may not record correct counts for all events below
@@ -1065,10 +1068,10 @@ def main():
 
   # Cleanup Phase
   if not cliargs.no_cleanup_phase:
-    phase_break()
-    logger.info("Cleanup phase starting")
-    phase_break()
     cleanup_start_time = time.time()
+    phase_break()
+    logger.info("Cleanup phase starting ({})".format(int(cleanup_start_time * 1000)))
+    phase_break()
 
     t = Template(workload_delete)
     workload_delete_rendered = t.render(
@@ -1089,14 +1092,14 @@ def main():
       logger.error("boatload (workload-delete.yml) failed, kube-burner rc: {}".format(rc))
       sys.exit(1)
     cleanup_end_time = time.time()
-    logger.info("Cleanup phase complete")
+    logger.info("Cleanup phase complete ({})".format(int(cleanup_end_time * 1000)))
 
   # Index Phase
   if not cliargs.no_index_phase and index_prometheus_data:
-    phase_break()
-    logger.info("Index phase starting")
-    phase_break()
     index_start_time = time.time()
+    phase_break()
+    logger.info("Index phase starting ({})".format(int(index_start_time * 1000)))
+    phase_break()
 
     t = Template(workload_index)
     workload_index_rendered = t.render(
@@ -1135,13 +1138,13 @@ def main():
         "--end", str(int(end_time)), "--uuid", workload_UUID, "-u", index_prometheus_server,
         "-m", "{}/metrics-aggregated.yaml".format(tmp_directory), "-t", index_prometheus_token]
     rc, _ = command(kb_cmd, cliargs.dry_run, tmp_directory, mask_arg=16)
+    index_end_time = time.time()
     if rc != 0:
       logger.error("boatload (workload-index.yml) failed, kube-burner rc: {}".format(rc))
       # No sys.exit(1) on index job error
-      logger.info("Index phase complete (kube-burner failed)")
+      logger.info("Index phase complete (kube-burner failed) ({})".format(int(index_end_time * 1000)))
     else:
-      logger.info("Index phase complete")
-    index_end_time = time.time()
+      logger.info("Index phase complete ({})".format(int(index_end_time * 1000)))
 
 
   # Write results on the test/workload
@@ -1199,9 +1202,12 @@ def main():
     logger.info("Workload UUID: {}".format(workload_UUID))
 
   # Milliseconds to Seconds * 1000 (For using the timestamp in Grafana, it must be a Unix timestamp in milliseconds)
-  results = [int(start_time * 1000), int(end_time * 1000), datetime.utcfromtimestamp(start_time), datetime.utcfromtimestamp(end_time),
-      cliargs.csv_title, workload_UUID, workload_duration, measurement_duration, cleanup_duration, index_duration,
-      total_time, cliargs.namespaces, cliargs.deployments, cliargs.pods, cliargs.containers, int(cliargs.service),
+  results = [int(start_time * 1000), int(workload_end_time * 1000), int(measurement_end_time * 1000),
+      int(cleanup_end_time * 1000), int(end_time * 1000), datetime.utcfromtimestamp(start_time),
+      datetime.utcfromtimestamp(workload_end_time), datetime.utcfromtimestamp(measurement_end_time),
+      datetime.utcfromtimestamp(cleanup_end_time), datetime.utcfromtimestamp(end_time), cliargs.csv_title,
+      workload_UUID, workload_duration, measurement_duration, cleanup_duration, index_duration, total_time,
+      cliargs.namespaces, cliargs.deployments, cliargs.pods, cliargs.containers, int(cliargs.service),
       int(cliargs.route), cliargs.configmaps, cliargs.secrets, cliargs.container_image, cliargs.cpu_requests,
       cliargs.memory_requests, cliargs.cpu_limits, cliargs.memory_limits, cliargs.startup_probe, cliargs.liveness_probe,
       cliargs.readiness_probe, cliargs.shared_selectors, cliargs.unique_selectors, cliargs.tolerations,
