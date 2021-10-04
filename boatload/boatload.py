@@ -1137,10 +1137,12 @@ def main():
     rc, _ = command(kb_cmd, cliargs.dry_run, tmp_directory, mask_arg=16)
     if rc != 0:
       logger.error("boatload (workload-index.yml) failed, kube-burner rc: {}".format(rc))
-      sys.exit(1)
-
+      # No sys.exit(1) on index job error
+      logger.info("Index phase complete (kube-burner failed)")
+    else:
+      logger.info("Index phase complete")
     index_end_time = time.time()
-    logger.info("Index phase complete")
+
 
   # Write results on the test/workload
   end_time = time.time()
