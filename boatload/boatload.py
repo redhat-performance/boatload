@@ -842,6 +842,7 @@ def main():
   workload_UUID = str(uuid.uuid4())
 
   # Workload Phase
+  workload_end_time = start_time
   if not cliargs.no_workload_phase:
     workload_start_time = time.time()
     phase_break()
@@ -918,6 +919,7 @@ def main():
   link_flap_count = 0
   killed_pod = 0
   marked_evictions = 0
+  measurement_end_time = workload_end_time
   if not cliargs.no_measurement_phase:
     measurement_start_time = time.time()
     phase_break()
@@ -1067,6 +1069,7 @@ def main():
     logger.info("boatload-* pods killed: {}".format(killed_pod))
 
   # Cleanup Phase
+  cleanup_end_time = measurement_end_time
   if not cliargs.no_cleanup_phase:
     cleanup_start_time = time.time()
     phase_break()
