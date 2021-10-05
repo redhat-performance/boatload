@@ -50,18 +50,7 @@ for iteration in `seq 1 ${iterations}`; do
   echo "****************************************************************************************************************************************"
 done
 
-# # Namespaces scaled
-# for iteration in `seq 1 ${iterations}`; do
-#   test_index=$((${test_index} + 1))
-#   echo "$(date -u +%Y%m%d-%H%M%S) - node density 1.${test_index} - ${iteration}/${iterations} - ${total_pods} namespaces, 1 deploy, 1 pod, 1 container, gohttp image, 1 service, 1 route, no probes, no configmaps, no secrets, no resources set"
-#   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-1.${test_index}.log"
-#   ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_pods}n-1d-1p-1c-${iteration}" -n ${total_pods} -d 1 -p 1 -c 1 -l -r --no-probes ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
-#   echo "$(date -u +%Y%m%d-%H%M%S) - node density 1.${test_index} - ${iteration}/${iterations} complete, sleeping ${sleep_period}"
-#   sleep ${sleep_period}
-#   echo "****************************************************************************************************************************************"
-# done
-
-# Test other images (With namespace as scaled hierarchy)
+# Namespaces scaled (additional images as well)
 images=("quay.io/redhat-performance/test-gohttp-probe:v0.0.2" "gcr.io/google_containers/pause-amd64:3.0" "quay.io/akrzos/hello-kubernetes:20210907")
 tc_titles=("gohttp" "pause" "hello-kubernetes")
 csv_titles=("gohttp" "pause" "hello")
@@ -84,7 +73,7 @@ for (( arg_index=0; arg_index<${#containers[@]}; arg_index++)); do
     test_index=$((${test_index} + 1))
     echo "$(date -u +%Y%m%d-%H%M%S) - node density 1.${test_index} - ${iteration}/${iterations} - ${total_pods} namespaces, 1 deploy, 1 pod, ${containers[$arg_index]} containers, gohttp image, 1 service, 1 route, no probes, no configmaps, no secrets, no resources set"
     logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-1.${test_index}.log"
-    ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_pods}n-1d-1p-${containers[$arg_index]}c-${iteration}" -n 1 -d 1 -p ${total_pods} -c ${containers[$arg_index]} -l -r --no-probes ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
+    ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_pods}n-1d-1p-${containers[$arg_index]}c-${iteration}" -n ${total_pods} -d 1 -p 1 -c ${containers[$arg_index]} -l -r --no-probes ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
     echo "$(date -u +%Y%m%d-%H%M%S) - node density 1.${test_index} - ${iteration}/${iterations} complete, sleeping ${sleep_period}"
     sleep ${sleep_period}
     echo "****************************************************************************************************************************************"
