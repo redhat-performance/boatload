@@ -1118,7 +1118,7 @@ def main():
 
     # Copy metrics.yml to tmp directory
     base_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
-    metrics_yml_dir = os.path.join(base_dir, "kube-burner", "metrics-aggregated.yaml")
+    metrics_yml_dir = os.path.join(base_dir, "kube-burner", "metrics.yaml")
     shutil.copy2(metrics_yml_dir, tmp_directory)
     logger.info("Copied {} to {}".format(metrics_yml_dir, tmp_directory))
 
@@ -1139,7 +1139,7 @@ def main():
     kb_cmd = [
         "kube-burner", "index", "-c", "workload-index.yml", "--start", str(int(start_time)),
         "--end", str(int(end_time)), "--uuid", workload_UUID, "-u", index_prometheus_server,
-        "-m", "{}/metrics-aggregated.yaml".format(tmp_directory), "-t", index_prometheus_token]
+        "-m", "{}/metrics.yaml".format(tmp_directory), "-t", index_prometheus_token]
     rc, _ = command(kb_cmd, cliargs.dry_run, tmp_directory, mask_arg=16)
     index_end_time = time.time()
     if rc != 0:
