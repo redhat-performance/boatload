@@ -8,11 +8,10 @@ nodes=$(oc get no -l jetlag=true --no-headers | wc -l)
 node_pods=$2
 total_pods=$((${nodes} * ${node_pods}))
 
-tc_num=$3
-
 mkdir -p ../logs
 sleep_period=120
 iterations=3
+tc_num=$3
 
 gohttp_env_vars="-e LISTEN_DELAY_SECONDS=0 LIVENESS_DELAY_SECONDS=0 READINESS_DELAY_SECONDS=0 RESPONSE_DELAY_MILLISECONDS=0 LIVENESS_SUCCESS_MAX=0 READINESS_SUCCESS_MAX=0"
 measurement="-D 180"
