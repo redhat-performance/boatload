@@ -167,7 +167,7 @@ jobs:
     apiVersion: v1
 """
 
-workload_index = """---
+workload_metrics = """---
 global:
   writeToFile: true
   metricsDirectory: metrics
@@ -176,7 +176,7 @@ global:
     esIndex: {{ measurements_index }}
 
   indexerConfig:
-    enabled: true
+    enabled: {{ indexing }}
     esServers: [{{ index_server}}]
     insecureSkipVerify: true
     defaultIndex: {{ default_index }}
@@ -537,7 +537,7 @@ def phase_break():
 def write_csv_results(result_file_name, results):
   header = ["start_ts", "workload_complete_ts", "measurement_complete_ts", "cleanup_complete_ts", "end_ts",
       "start_time", "workload_complete_time", "measurement_complete_time", "cleanup_complete_time", "end_time",
-      "title", "workload_uuid", "workload_duration", "measurement_duration", "cleanup_duration", "index_duration",
+      "title", "workload_uuid", "workload_duration", "measurement_duration", "cleanup_duration", "metrics_duration",
       "total_duration", "namespaces", "deployments", "pods", "containers", "services", "routes", "configmaps",
       "secrets", "image", "cpu_requests", "memory_requests", "cpu_limits", "memory_limits", "startup_probe",
       "liveness_probe", "readiness_probe", "shared_selectors", "unique_selectors", "tolerations", "duration",
@@ -576,7 +576,7 @@ def main():
   parser.add_argument("--no-workload-phase", action="store_true", default=False, help="Disables workload phase")
   parser.add_argument("--no-measurement-phase", action="store_true", default=False, help="Disables measurement phase")
   parser.add_argument("--no-cleanup-phase", action="store_true", default=False, help="Disables cleanup workload phase")
-  parser.add_argument("--no-index-phase", action="store_true", default=False, help="Disables index phase")
+  parser.add_argument("--no-metrics-phase", action="store_true", default=False, help="Disables metrics phase")
 
   # Workload arguments
   parser.add_argument("-n", "--namespaces", type=int, default=1, help="Number of namespaces to create")
@@ -641,13 +641,16 @@ def main():
   parser.add_argument("-N", "--link-flap-network", type=str, default="198.18.10.0/24",
                       help="Network to block for iptables link flapping")
 
+  # Metrics arguments
+  parser.add_argument("--metrics-profile", type=str, default="metrics.yaml", help="Metrics profile for kube-burner")
+  parser.add_argument("--prometheus-url", type=str, default="", help="Cluster prometheus URL")
+  parser.add_argument("--prometheus-token", type=str, default="", help="Token to access prometheus")
+
   # Indexing arguments
   parser.add_argument(
       "--index-server", type=str, default="", help="ElasticSearch server (Ex https://user:password@example.org:9200)")
   parser.add_argument("--default-index", type=str, default="boatload-default", help="Default index")
   parser.add_argument("--measurements-index", type=str, default="boatload-default", help="Measurements index")
-  parser.add_argument("--prometheus-url", type=str, default="", help="Cluster prometheus URL")
-  parser.add_argument("--prometheus-token", type=str, default="", help="Token to access prometheus")
 
   # CSV results file arguments:
   parser.add_argument("--csv-file", type=str, default="results.csv", help="Determines csv results file to append to")
@@ -664,7 +667,10 @@ def main():
     logger.setLevel(logging.DEBUG)
 
   phase_break()
-  logger.info("boatload")
+  if cliargs.dry_run:
+    logger.info("boatload - Dry Run")
+  else:
+    logger.info("boatload")
   phase_break()
   logger.debug("CLI Args: {}".format(cliargs))
 
@@ -721,54 +727,68 @@ def main():
     else:
       logger.debug("Link flapping impairment disabled")
 
+  # Validate metrics phase arguments
+  if not cliargs.no_metrics_phase:
+    logger.info("Metrics phase is enabled, checking metrics profile")
+    base_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
+    base_dir_kb = os.path.join(base_dir, "kube-burner")
+
+    if not pathlib.Path(cliargs.metrics_profile).is_file():
+      kb_metrics_profile = os.path.join(base_dir, cliargs.metrics_profile)
+      if not pathlib.Path(kb_metrics_profile).is_file():
+        kb_metrics_profile = os.path.join(base_dir, "kube-burner", cliargs.metrics_profile)
+        if pathlib.Path(kb_metrics_profile).is_file():
+          cliargs.metrics_profile = kb_metrics_profile
+        else:
+          logger.error("Metrics Profile ({}) not found in: {} or {}".format(cliargs.metrics_profile, base_dir, base_dir_kb))
+          sys.exit(1)
+      else:
+        cliargs.metrics_profile = kb_metrics_profile
+
+    logger.info("Checking prometheus url and token")
+    if cliargs.prometheus_url == "":
+      logger.info("Prometheus URL not set, attempting to get prometheus URL with OpenShift client")
+      oc_cmd = ["oc", "get", "route/prometheus-k8s", "-n", "openshift-monitoring", "--no-headers", "-o",
+                "custom-columns=HOST:status.ingress[].host"]
+      rc, output = command(oc_cmd, cliargs.dry_run)
+      if rc != 0:
+        logger.warning("Unable to determine prometheus URL via oc, disabling metrics phase, oc rc: {}".format(rc))
+      else:
+        cliargs.prometheus_url = "https://{}".format(output)
+
+    if cliargs.prometheus_token == "" and not (cliargs.prometheus_url == ""):
+      logger.info("Prometheus token not set, attempting to get prometheus "
+                  "token with OpenShift client and kubeburner sa")
+      oc_cmd = ["oc", "sa", "get-token", "kubeburner", "-n", "default"]
+      rc, output = command(oc_cmd, cliargs.dry_run, mask_output=True)
+      if rc != 0:
+        logger.warning("Unable to determine prometheus token via oc, disabling metrics phase, oc rc: {}".format(rc))
+        logger.warning(
+            "To remedy, as cluster-admin, run 'oc create sa kubeburner -n default' and "
+            "'oc adm policy add-cluster-role-to-user -z kubeburner cluster-admin'")
+      else:
+        cliargs.prometheus_token = output
+
+    if cliargs.prometheus_url == "" or cliargs.prometheus_token == "":
+      logger.warning("Prometheus server or token unset, disabling metrics phase")
+      cliargs.no_metrics_phase = True
+
   # Validate indexing args
-  index_measurement_data = False
-  index_prometheus_data = False
-  index_prometheus_server = ""
-  index_prometheus_token = ""
+  indexing_enabled = False
   if not cliargs.index_server == "":
-    logger.info("Indexing server is set, indexing measurements enabled")
-    index_measurement_data = True
-    if not cliargs.no_index_phase:
-      logger.info("Indexing phase is enabled, checking prometheus indexing args")
-      if cliargs.prometheus_url == "":
-        logger.info("Prometheus URL not set, attempting to get prometheus URL with OpenShift client")
-        oc_cmd = ["oc", "get", "route/prometheus-k8s", "-n", "openshift-monitoring", "--no-headers", "-o",
-                  "custom-columns=HOST:status.ingress[].host"]
-        rc, output = command(oc_cmd, cliargs.dry_run)
-        if rc != 0:
-          logger.warning("Unable to determine prometheus URL via oc, disabling metrics indexing, oc rc: {}".format(rc))
-        else:
-          index_prometheus_server = "https://{}".format(output)
-      else:
-        index_prometheus_server = cliargs.index_server
-      if cliargs.prometheus_token == "" and not (index_prometheus_server == ""):
-        logger.info("Prometheus token not set, attempting to get prometheus "
-                    "token with OpenShift client and kubeburner sa")
-        oc_cmd = ["oc", "sa", "get-token", "kubeburner"]
-        rc, output = command(oc_cmd, cliargs.dry_run, mask_output=True)
-        if rc != 0:
-          logger.warning("Unable to determine prometheus token via oc, disabling indexing, oc rc: {}".format(rc))
-          logger.warning(
-              "To remedy, as cluster-admin, run 'kubectl create sa kubeburner' and "
-              "'oc adm policy add-cluster-role-to-user -z kubeburner cluster-admin'")
-        else:
-          index_prometheus_token = output
-      else:
-        index_prometheus_token = cliargs.prometheus_token
-      if index_prometheus_server == "" or index_prometheus_token == "":
-        logger.warning("Prometheus server or token unset, disabling prometheus metrics indexing")
-        cliargs.no_index_phase = True
-      else:
-        index_prometheus_data = True
+    if not cliargs.no_metrics_phase:
+      logger.info("Indexing server is set, indexing measurements and metrics enabled")
+    else:
+      logger.info("Indexing server is set, indexing measurements enabled")
+    logger.info("Indexing server: {}".format(cliargs.index_server))
+    indexing_enabled = True
   else:
-    logger.info("Indexing server is unset, disabling all indexing")
-    cliargs.no_index_phase = True
+    logger.info("Indexing server is unset, all indexing is disabled")
 
   logger.info("Scenario Phases:")
   if not cliargs.no_workload_phase:
     logger.info("* Workload Phase")
-    if index_measurement_data:
+    if indexing_enabled:
       logger.info("  * Measurement index: {}".format(cliargs.measurements_index))
     else:
       logger.info("  * No measurement indexing")
@@ -826,17 +846,18 @@ def main():
       logger.info("  * No impairments")
   if not cliargs.no_cleanup_phase:
     logger.info("* Cleanup Phase")
-    if index_measurement_data:
+    if indexing_enabled:
       logger.info("  * Measurement index: {}".format(cliargs.measurements_index))
     else:
       logger.info("  * No measurement indexing")
-  if not cliargs.no_index_phase:
-    logger.info("* Index Phase")
-    logger.info("  * Server: {}".format(cliargs.index_server))
-    logger.info("  * Index: {}".format(cliargs.default_index))
+  if not cliargs.no_metrics_phase:
+    logger.info("* Metrics Phase")
+    logger.info("  * Metrics profile file: {}".format(cliargs.metrics_profile))
+    logger.info("  * Prometheus Url: {}".format(cliargs.prometheus_url))
+    if indexing_enabled:
+      logger.info("  * ES index: {}".format(cliargs.default_index))
   logger.info("Results csv file: {}".format(cliargs.csv_file))
   logger.info("Results title: {}".format(cliargs.csv_title))
-
 
   # Workload UUID is used with both workload and cleanup phases
   workload_UUID = str(uuid.uuid4())
@@ -852,7 +873,7 @@ def main():
     t = Template(workload_create)
     workload_create_rendered = t.render(
         measurements_index=cliargs.measurements_index,
-        indexing=index_measurement_data,
+        indexing=indexing_enabled,
         index_server=cliargs.index_server,
         default_index=cliargs.default_index,
         namespaces=cliargs.namespaces,
@@ -1079,7 +1100,7 @@ def main():
     t = Template(workload_delete)
     workload_delete_rendered = t.render(
         measurements_index=cliargs.measurements_index,
-        indexing=index_measurement_data,
+        indexing=indexing_enabled,
         index_server=cliargs.index_server,
         default_index=cliargs.default_index)
 
@@ -1097,30 +1118,28 @@ def main():
     cleanup_end_time = time.time()
     logger.info("Cleanup phase complete ({})".format(int(cleanup_end_time * 1000)))
 
-  # Index Phase
-  if not cliargs.no_index_phase and index_prometheus_data:
-    index_start_time = time.time()
+  # Metrics Phase
+  if not cliargs.no_metrics_phase:
+    metrics_start_time = time.time()
     phase_break()
-    logger.info("Index phase starting ({})".format(int(index_start_time * 1000)))
+    logger.info("Metrics phase starting ({})".format(int(metrics_start_time * 1000)))
     phase_break()
 
-    t = Template(workload_index)
-    workload_index_rendered = t.render(
+    t = Template(workload_metrics)
+    workload_metrics_rendered = t.render(
+        measurements_index=cliargs.measurements_index,
+        indexing=indexing_enabled,
         index_server=cliargs.index_server,
-        default_index=cliargs.default_index,
-        measurements_index=cliargs.measurements_index)
+        default_index=cliargs.default_index)
 
     tmp_directory = tempfile.mkdtemp()
     logger.info("Created {}".format(tmp_directory))
-    with open("{}/workload-index.yml".format(tmp_directory), "w") as file1:
-      file1.writelines(workload_index_rendered)
-    logger.info("Created {}/workload-index.yml".format(tmp_directory))
+    with open("{}/workload-metrics.yml".format(tmp_directory), "w") as file1:
+      file1.writelines(workload_metrics_rendered)
+    logger.info("Created {}/workload-metrics.yml".format(tmp_directory))
 
-    # Copy metrics.yml to tmp directory
-    base_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
-    metrics_yml_dir = os.path.join(base_dir, "kube-burner", "metrics.yaml")
-    shutil.copy2(metrics_yml_dir, tmp_directory)
-    logger.info("Copied {} to {}".format(metrics_yml_dir, tmp_directory))
+    shutil.copy2(cliargs.metrics_profile, "{}/metrics.yaml".format(tmp_directory))
+    logger.info("Copied {} to {}".format(cliargs.metrics_profile, "{}/metrics.yaml".format(tmp_directory)))
 
     if not cliargs.no_workload_phase:
       start_time = workload_start_time
@@ -1137,20 +1156,19 @@ def main():
       end_time = workload_end_time
 
     kb_cmd = [
-        "kube-burner", "index", "-c", "workload-index.yml", "--start", str(int(start_time)),
-        "--end", str(int(end_time)), "--uuid", workload_UUID, "-u", index_prometheus_server,
-        "-m", "{}/metrics.yaml".format(tmp_directory), "-t", index_prometheus_token]
+        "kube-burner", "index", "-c", "workload-metrics.yml", "--start", str(int(start_time)),
+        "--end", str(int(end_time)), "--uuid", workload_UUID, "-u", cliargs.prometheus_url,
+        "-m", "{}/metrics.yaml".format(tmp_directory), "-t", cliargs.prometheus_token]
     rc, _ = command(kb_cmd, cliargs.dry_run, tmp_directory, mask_arg=16)
-    index_end_time = time.time()
+    metrics_end_time = time.time()
     if rc != 0:
-      logger.error("boatload (workload-index.yml) failed, kube-burner rc: {}".format(rc))
-      # No sys.exit(1) on index job error
-      logger.info("Index phase complete (kube-burner failed) ({})".format(int(index_end_time * 1000)))
+      logger.error("boatload (workload-metrics.yml) failed, kube-burner rc: {}".format(rc))
+      # No sys.exit(1) on metrics job error
+      logger.info("Metrics phase complete (kube-burner failed) ({})".format(int(metrics_end_time * 1000)))
     else:
-      logger.info("Index phase complete ({})".format(int(index_end_time * 1000)))
+      logger.info("Metrics phase complete ({})".format(int(metrics_end_time * 1000)))
+    phase_break()
 
-
-  # Write results on the test/workload
   end_time = time.time()
 
   # Read in podLatency summary from kube-burner
@@ -1171,13 +1189,12 @@ def main():
         pod_latencies[measurement['quantileName']][stat] = measurement[stat]
   logger.debug("kube-burner podLatency measurements: {}".format(pod_latencies))
 
-  phase_break()
   logger.info("boatload Stats")
 
   workload_duration = 0
   measurement_duration = 0
   cleanup_duration = 0
-  index_duration = 0
+  metrics_duration = 0
 
   if flap_links:
     logger.info("* Number of times links flapped down: {}".format(link_flap_count))
@@ -1196,12 +1213,12 @@ def main():
   if not cliargs.no_cleanup_phase:
     cleanup_duration = round(cleanup_end_time - cleanup_start_time, 1)
     logger.info("Cleanup phase duration: {}".format(cleanup_duration))
-  if not cliargs.no_index_phase:
-    index_duration = round(index_end_time - index_start_time, 1)
-    logger.info("Index phase duration: {}".format(index_duration))
+  if not cliargs.no_metrics_phase:
+    metrics_duration = round(metrics_end_time - metrics_start_time, 1)
+    logger.info("Metrics phase duration: {}".format(metrics_duration))
   total_time = round(end_time - start_time, 1)
   logger.info("Total duration: {}".format(total_time))
-  if not cliargs.no_index_phase:
+  if not cliargs.no_metrics_phase:
     logger.info("Workload UUID: {}".format(workload_UUID))
 
   # Milliseconds to Seconds * 1000 (For using the timestamp in Grafana, it must be a Unix timestamp in milliseconds)
@@ -1209,14 +1226,14 @@ def main():
       int(cleanup_end_time * 1000), int(end_time * 1000), datetime.utcfromtimestamp(start_time),
       datetime.utcfromtimestamp(workload_end_time), datetime.utcfromtimestamp(measurement_end_time),
       datetime.utcfromtimestamp(cleanup_end_time), datetime.utcfromtimestamp(end_time), cliargs.csv_title,
-      workload_UUID, workload_duration, measurement_duration, cleanup_duration, index_duration, total_time,
+      workload_UUID, workload_duration, measurement_duration, cleanup_duration, metrics_duration, total_time,
       cliargs.namespaces, cliargs.deployments, cliargs.pods, cliargs.containers, int(cliargs.service),
       int(cliargs.route), cliargs.configmaps, cliargs.secrets, cliargs.container_image, cliargs.cpu_requests,
       cliargs.memory_requests, cliargs.cpu_limits, cliargs.memory_limits, cliargs.startup_probe, cliargs.liveness_probe,
       cliargs.readiness_probe, cliargs.shared_selectors, cliargs.unique_selectors, cliargs.tolerations,
       cliargs.duration, cliargs.interface, cliargs.start_vlan, cliargs.end_vlan, cliargs.latency, cliargs.packet_loss,
       cliargs.bandwidth_limit, cliargs.link_flap_down, cliargs.link_flap_up, cliargs.link_flap_firewall,
-      cliargs.link_flap_network, index_prometheus_data, cliargs.dry_run, link_flap_count,
+      cliargs.link_flap_network, indexing_enabled, cliargs.dry_run, link_flap_count,
       nodenotready_node_controller_count, nodenotready_kubelet_count, nodeready_count, marked_evictions, killed_pod]
   for measurement in kb_measurements:
     for stat in kb_stats:
