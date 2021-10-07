@@ -15,7 +15,8 @@ tc_num=6
 
 gohttp_env_vars="-e LISTEN_DELAY_SECONDS=0 LIVENESS_DELAY_SECONDS=0 READINESS_DELAY_SECONDS=0 RESPONSE_DELAY_MILLISECONDS=0 LIVENESS_SUCCESS_MAX=0 READINESS_SUCCESS_MAX=0"
 measurement="-D 180"
-csvfile="--csv-file tc${tc_num}-${csv_suffix}-$(date -u +%Y%m%d-%H%M%S).csv"
+csv_ts=$(date -u +%Y%m%d-%H%M%S)
+csvfile="--csv-results-file results-tc${tc_num}-${csv_suffix}-${csv_ts}.csv --csv-metrics-file metrics-tc${tc_num}-${csv_suffix}-${csv_ts}.csv"
 
 # Debug/Test entire Run
 # dryrun="--dry-run"

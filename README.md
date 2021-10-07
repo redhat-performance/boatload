@@ -71,8 +71,9 @@ usage: boatload.py [-h] [--no-workload-phase] [--no-measurement-phase] [--no-cle
                    [--liveness-probe-exec-command LIVENESS_PROBE_EXEC_COMMAND] [--readiness-probe-exec-command READINESS_PROBE_EXEC_COMMAND] [--no-probes]
                    [--default-selector DEFAULT_SELECTOR] [-s SHARED_SELECTORS] [-u UNIQUE_SELECTORS] [-o OFFSET] [--tolerations] [-D DURATION] [-I INTERFACE] [-S START_VLAN] [-E END_VLAN]
                    [-L LATENCY] [-P PACKET_LOSS] [-B BANDWIDTH_LIMIT] [-F LINK_FLAP_DOWN] [-U LINK_FLAP_UP] [-T] [-N LINK_FLAP_NETWORK] [--metrics-profile METRICS_PROFILE]
-                   [--prometheus-url PROMETHEUS_URL] [--prometheus-token PROMETHEUS_TOKEN] [--index-server INDEX_SERVER] [--default-index DEFAULT_INDEX]
-                   [--measurements-index MEASUREMENTS_INDEX] [--csv-file CSV_FILE] [--csv-title CSV_TITLE] [--debug] [--dry-run] [--reset]
+                   [--prometheus-url PROMETHEUS_URL] [--prometheus-token PROMETHEUS_TOKEN] [--metrics [METRICS ...]] [--index-server INDEX_SERVER] [--default-index DEFAULT_INDEX]
+                   [--measurements-index MEASUREMENTS_INDEX] [--csv-results-file CSV_RESULTS_FILE] [--csv-metrics-file CSV_METRICS_FILE] [--csv-title CSV_TITLE] [--debug] [--dry-run]
+                   [--reset]
 
 Run boatload
 
@@ -166,13 +167,18 @@ optional arguments:
                         Cluster prometheus URL (default: )
   --prometheus-token PROMETHEUS_TOKEN
                         Token to access prometheus (default: )
+  --metrics [METRICS ...]
+                        List of metrics to collect into metrics.csv (default: ['kubeletCPU', 'kubeletMemory', 'crioCPU', 'crioMemory'])
   --index-server INDEX_SERVER
                         ElasticSearch server (Ex https://user:password@example.org:9200) (default: )
   --default-index DEFAULT_INDEX
                         Default index (default: boatload-default)
   --measurements-index MEASUREMENTS_INDEX
                         Measurements index (default: boatload-default)
-  --csv-file CSV_FILE   Determines csv results file to append to (default: results.csv)
+  --csv-results-file CSV_RESULTS_FILE
+                        Determines results csv to append to (default: results.csv)
+  --csv-metrics-file CSV_METRICS_FILE
+                        Determines metrics csv to append to (default: metrics.csv)
   --csv-title CSV_TITLE
                         Determines title of row of data (default: untitled)
   --debug               Set log level debug (default: False)
