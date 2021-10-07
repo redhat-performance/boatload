@@ -25,19 +25,19 @@ Prior to running boatload workloads with selectors, you must create a number of 
 Create 100 shared labels across the remote worker nodes:
 
 ```console
-./labeler.py -c 100 -s
+$ ./boatload/labeler.py -c 100 -s
 ```
 
 Create 100 unique labels per node per boatload workload pod:
 
 ```console
-./labeler.py -c 100 -u
+$ ./boatload/labeler.py -c 100 -u
 ```
 
 Clear all 100 shared and unique labels off the remote worker nodes:
 
 ```console
-./labeler.py -c 100 -su --clear
+$ ./boatload/labeler.py -c 100 -su --clear
 ```
 
 ## Running boatload workload
@@ -53,26 +53,26 @@ Additional Pre-req for Remote Worker Node Test Environments:
 The boatload workload runs in several distinct phases:
 
 1. Workload - Load cluster with Namespaces, Deployments, Pods, and Services
-2. Measurement - Keeps cluster loaded and allows network impairments for a duration
+2. Measurement - Period of time to allow for measurements/metrics while cluster is loaded, and optional network impairments for a duration
 3. Cleanup - Cleanup workload off cluster
-4. Index - Index data collected by kube-burner over duration of test
+4. Metrics - Metrics are collected from prometheus by kube-burner and can be indexed
 
 Each phase can be disabled if intended during testing via arguments. The impairments that can be used are network bandwidth limits, latency, packet loss and link flapping. Bandwidth, latency, and packet loss can only be combined with link flapping if the firewall option is set. Review the arguments to see all the options for each phase.
 
 boatload workload arguments:
 
 ```console
-$ ./boatload.py -h
-usage: boatload.py [-h] [--no-workload-phase] [--no-measurement-phase] [--no-cleanup-phase] [--no-index-phase] [-n NAMESPACES] [-d DEPLOYMENTS] [-l] [-r] [-p PODS] [-c CONTAINERS]
+$ ./boatload/boatload.py -h
+usage: boatload.py [-h] [--no-workload-phase] [--no-measurement-phase] [--no-cleanup-phase] [--no-metrics-phase] [-n NAMESPACES] [-d DEPLOYMENTS] [-l] [-r] [-p PODS] [-c CONTAINERS]
                    [-i CONTAINER_IMAGE] [--container-port CONTAINER_PORT] [-e [CONTAINER_ENV ...]] [-m CONFIGMAPS] [--secrets SECRETS] [--cpu-requests CPU_REQUESTS]
                    [--memory-requests MEMORY_REQUESTS] [--cpu-limits CPU_LIMITS] [--memory-limits MEMORY_LIMITS] [--startup-probe STARTUP_PROBE] [--liveness-probe LIVENESS_PROBE]
                    [--readiness-probe READINESS_PROBE] [--startup-probe-endpoint STARTUP_PROBE_ENDPOINT] [--liveness-probe-endpoint LIVENESS_PROBE_ENDPOINT]
                    [--readiness-probe-endpoint READINESS_PROBE_ENDPOINT] [--startup-probe-exec-command STARTUP_PROBE_EXEC_COMMAND]
                    [--liveness-probe-exec-command LIVENESS_PROBE_EXEC_COMMAND] [--readiness-probe-exec-command READINESS_PROBE_EXEC_COMMAND] [--no-probes]
                    [--default-selector DEFAULT_SELECTOR] [-s SHARED_SELECTORS] [-u UNIQUE_SELECTORS] [-o OFFSET] [--tolerations] [-D DURATION] [-I INTERFACE] [-S START_VLAN] [-E END_VLAN]
-                   [-L LATENCY] [-P PACKET_LOSS] [-B BANDWIDTH_LIMIT] [-F LINK_FLAP_DOWN] [-U LINK_FLAP_UP] [-T] [-N LINK_FLAP_NETWORK] [--index-server INDEX_SERVER]
-                   [--default-index DEFAULT_INDEX] [--measurements-index MEASUREMENTS_INDEX] [--prometheus-url PROMETHEUS_URL] [--prometheus-token PROMETHEUS_TOKEN] [--csv-file CSV_FILE]
-                   [--csv-title CSV_TITLE] [--debug] [--dry-run] [--reset]
+                   [-L LATENCY] [-P PACKET_LOSS] [-B BANDWIDTH_LIMIT] [-F LINK_FLAP_DOWN] [-U LINK_FLAP_UP] [-T] [-N LINK_FLAP_NETWORK] [--metrics-profile METRICS_PROFILE]
+                   [--prometheus-url PROMETHEUS_URL] [--prometheus-token PROMETHEUS_TOKEN] [--index-server INDEX_SERVER] [--default-index DEFAULT_INDEX]
+                   [--measurements-index MEASUREMENTS_INDEX] [--csv-file CSV_FILE] [--csv-title CSV_TITLE] [--debug] [--dry-run] [--reset]
 
 Run boatload
 
@@ -82,7 +82,7 @@ optional arguments:
   --no-measurement-phase
                         Disables measurement phase (default: False)
   --no-cleanup-phase    Disables cleanup workload phase (default: False)
-  --no-index-phase      Disables index phase (default: False)
+  --no-metrics-phase    Disables metrics phase (default: False)
   -n NAMESPACES, --namespaces NAMESPACES
                         Number of namespaces to create (default: 1)
   -d DEPLOYMENTS, --deployments DEPLOYMENTS
@@ -160,19 +160,21 @@ optional arguments:
                         Flaps links via iptables instead of ip link set (default: False)
   -N LINK_FLAP_NETWORK, --link-flap-network LINK_FLAP_NETWORK
                         Network to block for iptables link flapping (default: 198.18.10.0/24)
-  --index-server INDEX_SERVER
-                        ElasticSearch server (Ex https://user:password@example.org:9200) (default: )
-  --default-index DEFAULT_INDEX
-                        Default index (default: boatload-default-test)
-  --measurements-index MEASUREMENTS_INDEX
-                        Measurements index (default: boatload-measurements-test)
+  --metrics-profile METRICS_PROFILE
+                        Metrics profile for kube-burner (default: metrics.yaml)
   --prometheus-url PROMETHEUS_URL
                         Cluster prometheus URL (default: )
   --prometheus-token PROMETHEUS_TOKEN
                         Token to access prometheus (default: )
+  --index-server INDEX_SERVER
+                        ElasticSearch server (Ex https://user:password@example.org:9200) (default: )
+  --default-index DEFAULT_INDEX
+                        Default index (default: boatload-default)
+  --measurements-index MEASUREMENTS_INDEX
+                        Measurements index (default: boatload-default)
   --csv-file CSV_FILE   Determines csv results file to append to (default: results.csv)
   --csv-title CSV_TITLE
-                        Determines title of row of data (default: )
+                        Determines title of row of data (default: untitled)
   --debug               Set log level debug (default: False)
   --dry-run             Echos commands instead of executing them (default: False)
   --reset               Attempts to undo all network impairments (default: False)
@@ -220,7 +222,7 @@ CPU requests and limits is in millicores, thus `1000` equals 1 cpu core. Memory 
 
 ## boatload workload container image configuration
 
-The boatload workload allows setting a custom image with the containers it deploys. Use the `-i` option to change the container image. The default container image is `quay.io/redhat-performance/test-gohttp-probe:latest`. The `test-gohttp-probe` container image exposes a `livez` and `readyz` endpoint so you can easily test probe configuration in conjunction with various object hierarchies.
+The boatload workload allows setting a custom image with the containers it deploys. Use the `-i` option to change the container image. The default container image is `quay.io/redhat-performance/test-gohttp-probe:v0.0.2`. The `test-gohttp-probe` container image exposes a `livez` and `readyz` endpoint so you can easily test probe configuration in conjunction with various object hierarchies.
 
 An example of a container image that works with all probes disabled is the pause pod.
 
@@ -238,14 +240,18 @@ If you use the default container image `quay.io/redhat-performance/test-gohttp-p
 * `--startup-probe-endpoint STARTUP_PROBE_ENDPOINT`
 * `--liveness-probe-endpoint LIVENESS_PROBE_ENDPOINT`
 * `--readiness-probe-endpoint READINESS_PROBE_ENDPOINT`
+* `--startup-probe-exec-command STARTUP_PROBE_EXEC_COMMAND`
+* `--liveness-probe-exec-command LIVENESS_PROBE_EXEC_COMMAND`
+* `--readiness-probe-exec-command READINESS_PROBE_EXEC_COMMAND`
+* `--no-probes`
 
-Each probe takes a comma separated string for configuration that consists of the probe type followed by 4 or 5 integer values. The endpoint arguments simply take a string of what endpoint is expected for which probe for the specific application.
+Each probe (startup/liveness/readiness) takes a comma separated string for configuration that consists of the probe type followed by 4 or 5 integer values. The endpoint arguments simply take a string of what endpoint is expected for which probe for the specific application when using http probes. The exec command arguments are only for adjusting what command to run with an exec probe.
 
 ```console
 $ ./boatload.py --startup-probe http,0,10,1,12 --liveness-probe http,0,10,1,3 --readiness-probe http,0,10,1,3,1
 ```
 
-The first option in the comma separated string can be either `http`, `tcp`, or `off`. The remaining options are all integers and configure these probe options in the order shown:
+The first option in the comma separated string can be either `http`, `tcp`, `exec`, or `off`. The remaining options are all integers and configure these probe options in the order shown:
 
 ```yaml
 initialDelaySeconds: 0
@@ -256,6 +262,12 @@ successThreshold: 1
 ```
 
 See this [kubernetes documentation](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) that describes each configuration item. Note that startup and liveness probes must configure `successThreshold` to value `1`. Since it is the last argument, it can be left off so the default is consumed for both those probes.
+
+Configuring an exec probe command looks like this:
+
+```console
+$ ./boatload.py --startup-probe exec,0,10,1,12 --startup-probe-exec-command "test\n-f\n/tmp/startup"
+```
 
 ## boatload workload container environment configuration
 
