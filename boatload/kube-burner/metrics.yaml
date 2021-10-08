@@ -114,3 +114,7 @@
 - query: cluster_version{type="completed"}
   metricName: clusterVersion
   instant: true
+
+# Boatload added metric
+- query: sum(kube_node_status_condition{status="true", condition="Ready"})
+  metricName: nodeReadyStatus

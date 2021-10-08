@@ -31,7 +31,7 @@ echo "**************************************************************************
 test_index=0
 
 # Configmaps
-obj_counts="4 16 32"
+obj_counts="4 8"
 for obj_count in ${obj_counts}; do
   for iteration in `seq 1 ${iterations}`; do
     test_index=$((${test_index} + 1))
@@ -45,7 +45,7 @@ for obj_count in ${obj_counts}; do
 done
 
 # Secrets
-obj_counts="4 16 32"
+obj_counts="4 8"
 for obj_count in ${obj_counts}; do
   for iteration in `seq 1 ${iterations}`; do
     test_index=$((${test_index} + 1))
@@ -59,7 +59,7 @@ for obj_count in ${obj_counts}; do
 done
 
 # Configmaps and Secrets
-obj_counts="4 16 32"
+obj_counts="4 8"
 for obj_count in ${obj_counts}; do
   for iteration in `seq 1 ${iterations}`; do
     test_index=$((${test_index} + 1))
