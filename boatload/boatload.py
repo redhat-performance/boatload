@@ -20,6 +20,7 @@ from datetime import datetime
 from jinja2 import Template
 import json
 import logging
+import numpy as np
 import os
 import pathlib
 import re
@@ -513,6 +514,25 @@ def phase_break():
   logger.info("###############################################################################")
 
 
+def write_csv_metrics(metrics_file_name, results, metrics):
+  header = ["start_ts", "workload_complete_ts", "measurement_complete_ts", "cleanup_complete_ts", "end_ts",
+      "start_time", "workload_complete_time", "measurement_complete_time", "cleanup_complete_time", "end_time",
+      "title", "workload_uuid",]
+
+  logger.info("Writing metrics csv to {}".format(metrics_file_name))
+  write_header = False
+  if not pathlib.Path(metrics_file_name).is_file():
+    write_header = True
+    for metric in metrics:
+      header.extend(["{}_len".format(metric), "{}_min".format(metric), "{}_avg".format(metric), "{}_max".format(metric),
+          "{}_p50".format(metric), "{}_p95".format(metric), "{}_p99".format(metric)])
+  with open(metrics_file_name, 'a') as csvfile:
+    csv_writer = csv.writer(csvfile)
+    if write_header:
+      csv_writer.writerow(header)
+    csv_writer.writerow(results)
+
+
 def write_csv_results(result_file_name, results):
   header = ["start_ts", "workload_complete_ts", "measurement_complete_ts", "cleanup_complete_ts", "end_ts",
       "start_time", "workload_complete_time", "measurement_complete_time", "cleanup_complete_time", "end_time",
@@ -546,6 +566,7 @@ def main():
       "LISTEN_DELAY_SECONDS=20", "LIVENESS_DELAY_SECONDS=10", "READINESS_DELAY_SECONDS=30",
       "RESPONSE_DELAY_MILLISECONDS=50", "LIVENESS_SUCCESS_MAX=60", "READINESS_SUCCESS_MAX=30"
   ]
+  default_metrics_collected = ["kubeletCPU", "kubeletMemory", "crioCPU", "crioMemory"]
 
   parser = argparse.ArgumentParser(
       description="Run boatload",
@@ -624,6 +645,8 @@ def main():
   parser.add_argument("--metrics-profile", type=str, default="metrics.yaml", help="Metrics profile for kube-burner")
   parser.add_argument("--prometheus-url", type=str, default="", help="Cluster prometheus URL")
   parser.add_argument("--prometheus-token", type=str, default="", help="Token to access prometheus")
+  parser.add_argument(
+      "--metrics", nargs='*', default=default_metrics_collected, help="List of metrics to collect into metrics.csv")
 
   # Indexing arguments
   parser.add_argument(
@@ -631,8 +654,9 @@ def main():
   parser.add_argument("--default-index", type=str, default="boatload-default", help="Default index")
   parser.add_argument("--measurements-index", type=str, default="boatload-default", help="Measurements index")
 
-  # CSV results file arguments:
-  parser.add_argument("--csv-file", type=str, default="results.csv", help="Determines csv results file to append to")
+  # CSV results/metrics file arguments:
+  parser.add_argument("--csv-results-file", type=str, default="results.csv", help="Determines results csv to append to")
+  parser.add_argument("--csv-metrics-file", type=str, default="metrics.csv", help="Determines metrics csv to append to")
   parser.add_argument("--csv-title", type=str, default="untitled", help="Determines title of row of data")
 
   # Other arguments
@@ -835,7 +859,9 @@ def main():
     logger.info("  * Prometheus Url: {}".format(cliargs.prometheus_url))
     if indexing_enabled:
       logger.info("  * ES index: {}".format(cliargs.default_index))
-  logger.info("Results csv file: {}".format(cliargs.csv_file))
+    logger.info("  * Metrics csv file: {}".format(cliargs.csv_metrics_file))
+    logger.info("  * Metrics to collect in csv: {}".format(cliargs.metrics))
+  logger.info("Results csv file: {}".format(cliargs.csv_results_file))
   logger.info("Results title: {}".format(cliargs.csv_title))
 
   # Workload UUID is used with both workload and cleanup phases
@@ -1116,6 +1142,7 @@ def main():
     with open("{}/workload-metrics.yml".format(tmp_directory), "w") as file1:
       file1.writelines(workload_metrics_rendered)
     logger.info("Created {}/workload-metrics.yml".format(tmp_directory))
+    metrics_dir = os.path.join(tmp_directory, "metrics")
 
     shutil.copy2(cliargs.metrics_profile, "{}/metrics.yaml".format(tmp_directory))
     logger.info("Copied {} to {}".format(cliargs.metrics_profile, "{}/metrics.yaml".format(tmp_directory)))
@@ -1152,7 +1179,7 @@ def main():
 
   # Read in podLatency summary from kube-burner
   kb_measurements = ["PodScheduled", "Initialized", "ContainersReady", "Ready"]
-  kb_stats =  ["avg", "max", "P50", "P95", "P99"]
+  kb_stats = ["avg", "max", "P50", "P95", "P99"]
   pod_latencies = {}
   for measurement in kb_measurements:
     pod_latencies[measurement] = {}
@@ -1168,6 +1195,32 @@ def main():
         pod_latencies[measurement['quantileName']][stat] = measurement[stat]
   logger.debug("kube-burner podLatency measurements: {}".format(pod_latencies))
 
+  # Read in metrics into metrics csv
+  if not cliargs.no_metrics_phase and not cliargs.dry_run:
+    metric_collection_start = time.time()
+    metrics_data = {}
+    for metric in cliargs.metrics:
+      metrics_data[metric] = {}
+    logger.info("Collecting metric data for metrics csv")
+    for metric in cliargs.metrics:
+      metric_json = os.path.join(metrics_dir, "kube-burner-indexing-{}.json".format(metric))
+      logger.info("Reading data from {}".format(metric_json))
+      with open(metric_json) as metric_file:
+        measurements = json.load(metric_file)
+        # TODO: Need to account for metrics with more than one machine collected on (labels.node = $NODE)
+        values = [x['value'] for x in measurements]
+        logger.debug("Measurements: {}".format(measurements))
+        logger.debug("Values: {}".format(values))
+        metrics_data[metric]["len"] = len(values)
+        metrics_data[metric]["min"] = np.min(values)
+        metrics_data[metric]["avg"] = np.mean(values)
+        metrics_data[metric]["max"] = np.max(values)
+        metrics_data[metric]["P50"] = np.percentile(values, 50)
+        metrics_data[metric]["P95"] = np.percentile(values, 95)
+        metrics_data[metric]["P99"] = np.percentile(values, 99)
+    logger.info("Completed collecting metric data for csv in: {}".format(round(time.time() - metric_collection_start, 1)))
+    logger.debug("Collected metrics data: {}".format(metrics_data))
+  phase_break()
   logger.info("boatload Stats")
 
   workload_duration = 0
@@ -1217,7 +1270,19 @@ def main():
   for measurement in kb_measurements:
     for stat in kb_stats:
       results.append(pod_latencies[measurement][stat])
-  write_csv_results(cliargs.csv_file, results)
+  write_csv_results(cliargs.csv_results_file, results)
+
+  if not cliargs.no_metrics_phase and not cliargs.dry_run:
+    metrics_csv = [int(start_time * 1000), int(workload_end_time * 1000), int(measurement_end_time * 1000),
+        int(cleanup_end_time * 1000), int(end_time * 1000), datetime.utcfromtimestamp(start_time),
+        datetime.utcfromtimestamp(workload_end_time), datetime.utcfromtimestamp(measurement_end_time),
+        datetime.utcfromtimestamp(cleanup_end_time), datetime.utcfromtimestamp(end_time), cliargs.csv_title,
+        workload_UUID]
+    for metric in cliargs.metrics:
+      metrics_csv.extend([metrics_data[metric]["len"], metrics_data[metric]["min"], metrics_data[metric]["avg"],
+          metrics_data[metric]["max"], metrics_data[metric]["P50"], metrics_data[metric]["P95"],
+          metrics_data[metric]["P99"]])
+    write_csv_metrics(cliargs.csv_metrics_file, metrics_csv, cliargs.metrics)
 
 if __name__ == '__main__':
   sys.exit(main())
