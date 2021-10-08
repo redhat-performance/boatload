@@ -141,27 +141,6 @@ jobs:
   qps: 10
   burst: 20
   objects:
-
-  - kind: ConfigMap
-    labelSelector: {kube-burner-job: boatload}
-    apiVersion: v1
-
-  - kind: Secret
-    labelSelector: {kube-burner-job: boatload}
-    apiVersion: v1
-
-  - kind: Route
-    labelSelector: {kube-burner-job: boatload}
-    apiVersion: route.openshift.io/v1
-
-  - kind: Service
-    labelSelector: {kube-burner-job: boatload}
-    apiVersion: v1
-
-  - kind: Deployment
-    labelSelector: {kube-burner-job: boatload}
-    apiVersion: apps/v1
-
   - kind: Namespace
     labelSelector: {kube-burner-job: boatload}
     apiVersion: v1
