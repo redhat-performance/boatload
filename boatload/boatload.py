@@ -575,7 +575,7 @@ def main():
   # Phase arguments
   parser.add_argument("--no-workload-phase", action="store_true", default=False, help="Disables workload phase")
   parser.add_argument("--no-measurement-phase", action="store_true", default=False, help="Disables measurement phase")
-  parser.add_argument("--no-cleanup-phase", action="store_true", default=False, help="Disables cleanup workload phase")
+  parser.add_argument("--no-cleanup-phase", action="store_true", default=False, help="Disables cleanup phase")
   parser.add_argument("--no-metrics-phase", action="store_true", default=False, help="Disables metrics phase")
 
   # Workload arguments
@@ -623,7 +623,8 @@ def main():
   parser.add_argument("--tolerations", action="store_true", default=False, help="Include RWN tolerations on pod spec")
 
   # Measurement arguments
-  parser.add_argument("-D", "--duration", type=int, default=30, help="Duration of measurent/impairment phase (Seconds)")
+  parser.add_argument(
+      "-D", "--duration", type=int, default=30, help="Duration of measurement/impairment phase (Seconds)")
   parser.add_argument("-I", "--interface", type=str, default="ens1f1", help="Interface of vlans to impair")
   parser.add_argument("-S", "--start-vlan", type=int, default=100, help="Starting VLAN off interface")
   parser.add_argument("-E", "--end-vlan", type=int, default=105, help="Ending VLAN off interface")
@@ -705,7 +706,7 @@ def main():
     sys.exit(0)
 
   if cliargs.no_workload_phase and cliargs.no_measurement_phase and cliargs.no_cleanup_phase:
-    logger.warning("No meaningful phases enabled. Exiting...")
+    logger.error("No meaningful phases enabled. Exiting...")
     sys.exit(0)
 
   # Validate link flap args
@@ -1168,7 +1169,7 @@ def main():
     rc, _ = command(kb_cmd, cliargs.dry_run, tmp_directory, mask_arg=16)
     metrics_end_time = time.time()
     if rc != 0:
-      logger.error("boatload (workload-metrics.yml) failed, kube-burner rc: {}".format(rc))
+      logger.warning("boatload (workload-metrics.yml) failed, kube-burner rc: {}".format(rc))
       # No sys.exit(1) on metrics job error
       logger.info("Metrics phase complete (kube-burner failed) ({})".format(int(metrics_end_time * 1000)))
     else:
@@ -1205,19 +1206,29 @@ def main():
     for metric in cliargs.metrics:
       metric_json = os.path.join(metrics_dir, "kube-burner-indexing-{}.json".format(metric))
       logger.info("Reading data from {}".format(metric_json))
-      with open(metric_json) as metric_file:
-        measurements = json.load(metric_file)
-        # TODO: Need to account for metrics with more than one machine collected on (labels.node = $NODE)
-        values = [x['value'] for x in measurements]
-        logger.debug("Measurements: {}".format(measurements))
-        logger.debug("Values: {}".format(values))
-        metrics_data[metric]["len"] = len(values)
-        metrics_data[metric]["min"] = np.min(values)
-        metrics_data[metric]["avg"] = np.mean(values)
-        metrics_data[metric]["max"] = np.max(values)
-        metrics_data[metric]["P50"] = np.percentile(values, 50)
-        metrics_data[metric]["P95"] = np.percentile(values, 95)
-        metrics_data[metric]["P99"] = np.percentile(values, 99)
+      try:
+        with open(metric_json) as metric_file:
+          measurements = json.load(metric_file)
+          # TODO: Need to account for metrics with more than one machine collected on (labels.node = $NODE)
+          values = [x['value'] for x in measurements]
+          logger.debug("Measurements: {}".format(measurements))
+          logger.debug("Values: {}".format(values))
+          metrics_data[metric]["len"] = len(values)
+          metrics_data[metric]["min"] = np.min(values)
+          metrics_data[metric]["avg"] = np.mean(values)
+          metrics_data[metric]["max"] = np.max(values)
+          metrics_data[metric]["P50"] = np.percentile(values, 50)
+          metrics_data[metric]["P95"] = np.percentile(values, 95)
+          metrics_data[metric]["P99"] = np.percentile(values, 99)
+      except FileNotFoundError as err:
+        logger.warning("Metric file was not found: {}".format(err))
+        metrics_data[metric]["len"] = 0
+        metrics_data[metric]["min"] = 0
+        metrics_data[metric]["avg"] = 0
+        metrics_data[metric]["max"] = 0
+        metrics_data[metric]["P50"] = 0
+        metrics_data[metric]["P95"] = 0
+        metrics_data[metric]["P99"] = 0
     logger.info("Completed collecting metric data for csv in: {}".format(round(time.time() - metric_collection_start, 1)))
     logger.debug("Collected metrics data: {}".format(metrics_data))
   phase_break()
