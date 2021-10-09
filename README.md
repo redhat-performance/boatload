@@ -82,7 +82,7 @@ optional arguments:
   --no-workload-phase   Disables workload phase (default: False)
   --no-measurement-phase
                         Disables measurement phase (default: False)
-  --no-cleanup-phase    Disables cleanup workload phase (default: False)
+  --no-cleanup-phase    Disables cleanup phase (default: False)
   --no-metrics-phase    Disables metrics phase (default: False)
   -n NAMESPACES, --namespaces NAMESPACES
                         Number of namespaces to create (default: 1)
@@ -140,7 +140,7 @@ optional arguments:
                         Offset for iterated unique node-selectors (default: 0)
   --tolerations         Include RWN tolerations on pod spec (default: False)
   -D DURATION, --duration DURATION
-                        Duration of measurent/impairment phase (Seconds) (default: 30)
+                        Duration of measurement/impairment phase (Seconds) (default: 30)
   -I INTERFACE, --interface INTERFACE
                         Interface of vlans to impair (default: ens1f1)
   -S START_VLAN, --start-vlan START_VLAN
@@ -168,7 +168,7 @@ optional arguments:
   --prometheus-token PROMETHEUS_TOKEN
                         Token to access prometheus (default: )
   --metrics [METRICS ...]
-                        List of metrics to collect into metrics.csv (default: ['kubeletCPU', 'kubeletMemory', 'crioCPU', 'crioMemory'])
+                        List of metrics to collect into metrics.csv (default: ['nodeReadyStatus', 'kubeletCPU', 'kubeletMemory', 'crioCPU', 'crioMemory'])
   --index-server INDEX_SERVER
                         ElasticSearch server (Ex https://user:password@example.org:9200) (default: )
   --default-index DEFAULT_INDEX
