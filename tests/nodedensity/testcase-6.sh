@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Node Density Enhanced Testing for SNO
 # Test Case 5 - Validate Max-pods with http probes
+set -e
+set -o pipefail
 
 csv_suffix=$1
 
@@ -9,6 +11,7 @@ node_pods=$2
 total_pods=$((${nodes} * ${node_pods}))
 
 mkdir -p ../logs
+mkdir -p ../results
 sleep_period=120
 iterations=3
 tc_num=6
@@ -16,7 +19,7 @@ tc_num=6
 gohttp_env_vars="-e LISTEN_DELAY_SECONDS=0 LIVENESS_DELAY_SECONDS=0 READINESS_DELAY_SECONDS=0 RESPONSE_DELAY_MILLISECONDS=0 LIVENESS_SUCCESS_MAX=0 READINESS_SUCCESS_MAX=0"
 measurement="-D 180"
 csv_ts=$(date -u +%Y%m%d-%H%M%S)
-csvfile="--csv-results-file results-tc${tc_num}-${csv_suffix}-${csv_ts}.csv --csv-metrics-file metrics-tc${tc_num}-${csv_suffix}-${csv_ts}.csv"
+csvfile="--csv-results-file ../results/results-tc${tc_num}-${csv_suffix}-${csv_ts}.csv --csv-metrics-file ../results/metrics-tc${tc_num}-${csv_suffix}-${csv_ts}.csv"
 
 # Debug/Test entire Run
 # dryrun="--dry-run"
