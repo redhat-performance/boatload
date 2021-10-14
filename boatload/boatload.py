@@ -566,7 +566,10 @@ def main():
       "LISTEN_DELAY_SECONDS=20", "LIVENESS_DELAY_SECONDS=10", "READINESS_DELAY_SECONDS=30",
       "RESPONSE_DELAY_MILLISECONDS=50", "LIVENESS_SUCCESS_MAX=60", "READINESS_SUCCESS_MAX=30"
   ]
-  default_metrics_collected = ["nodeReadyStatus", "kubeletCPU", "kubeletMemory", "crioCPU", "crioMemory"]
+  default_metrics_collected = [
+      "nodeReadyStatus", "nodeCPU", "nodeMemoryAvailable", "nodeMemoryActive", "rxNetworkBytes", "txNetworkBytes",
+      "nodeDiskWrittenBytes", "nodeDiskReadBytes", "kubeletCPU", "kubeletMemory", "crioCPU", "crioMemory"
+  ]
 
   parser = argparse.ArgumentParser(
       description="Run boatload",
