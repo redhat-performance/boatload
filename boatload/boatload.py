@@ -787,7 +787,8 @@ def main():
       logger.info("Indexing server is set, indexing measurements and metrics enabled")
     else:
       logger.info("Indexing server is set, indexing measurements enabled")
-    logger.info("Indexing server: {}".format(cliargs.index_server))
+    clean_server = cliargs.index_server[cliargs.index_server.find("@") + 1:].replace("\"", "")
+    logger.info("Indexing server: {}".format(clean_server))
     indexing_enabled = True
   else:
     logger.info("Indexing server is unset, all indexing is disabled")

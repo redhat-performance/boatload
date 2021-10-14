@@ -168,7 +168,8 @@ optional arguments:
   --prometheus-token PROMETHEUS_TOKEN
                         Token to access prometheus (default: )
   --metrics [METRICS ...]
-                        List of metrics to collect into metrics.csv (default: ['nodeReadyStatus', 'kubeletCPU', 'kubeletMemory', 'crioCPU', 'crioMemory'])
+                        List of metrics to collect into metrics.csv (default: ['nodeReadyStatus', 'nodeCPU', 'nodeMemoryAvailable', 'nodeMemoryActive', 'rxNetworkBytes', 'txNetworkBytes',
+                        'nodeDiskWrittenBytes', 'nodeDiskReadBytes', 'kubeletCPU', 'kubeletMemory', 'crioCPU', 'crioMemory'])
   --index-server INDEX_SERVER
                         ElasticSearch server (Ex https://user:password@example.org:9200) (default: )
   --default-index DEFAULT_INDEX
