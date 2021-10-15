@@ -115,6 +115,12 @@
   metricName: clusterVersion
   instant: true
 
-# Boatload added metric
+# Boatload added metrics
 - query: sum(kube_node_status_condition{status="true", condition="Ready"})
   metricName: nodeReadyStatus
+
+- query: sum(node_cpu_info) by (instance) - on (instance) sum(irate(node_cpu_seconds_total{mode="idle"}[2m])) by (instance)
+  metricName: nodeCoresUsed
+
+- query: sum(node_cpu_info) by (instance) - on (instance) sum(irate(node_cpu_seconds_total{mode=~"idle|iowait"}[2m])) by (instance)
+  metricName: nodeCoresNotIdle

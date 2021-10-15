@@ -336,8 +336,12 @@ data:
   boatload-{{ .Iteration }}-{{ .Replica }}-{{ .JobName }}: UmFuZG9tIGRhdGEK
 """
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s : %(levelname)s : %(message)s')
-logger = logging.getLogger('boatload')
+metrics_header = ["start_ts", "workload_complete_ts", "measurement_complete_ts", "cleanup_complete_ts", "end_ts",
+    "start_time", "workload_complete_time", "measurement_complete_time", "cleanup_complete_time", "end_time",
+    "title", "workload_uuid",]
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s : %(levelname)s : %(message)s")
+logger = logging.getLogger("boatload")
 logging.Formatter.converter = time.gmtime
 
 
@@ -514,22 +518,15 @@ def phase_break():
   logger.info("###############################################################################")
 
 
-def write_csv_metrics(metrics_file_name, results, metrics):
-  header = ["start_ts", "workload_complete_ts", "measurement_complete_ts", "cleanup_complete_ts", "end_ts",
-      "start_time", "workload_complete_time", "measurement_complete_time", "cleanup_complete_time", "end_time",
-      "title", "workload_uuid",]
-
+def write_csv_metrics(metrics_file_name, metrics_header, results):
   logger.info("Writing metrics csv to {}".format(metrics_file_name))
   write_header = False
   if not pathlib.Path(metrics_file_name).is_file():
     write_header = True
-    for metric in metrics:
-      header.extend(["{}_len".format(metric), "{}_min".format(metric), "{}_avg".format(metric), "{}_max".format(metric),
-          "{}_p50".format(metric), "{}_p95".format(metric), "{}_p99".format(metric)])
-  with open(metrics_file_name, 'a') as csvfile:
+  with open(metrics_file_name, "a") as csvfile:
     csv_writer = csv.writer(csvfile)
     if write_header:
-      csv_writer.writerow(header)
+      csv_writer.writerow(metrics_header)
     csv_writer.writerow(results)
 
 
@@ -552,7 +549,7 @@ def write_csv_results(result_file_name, results):
   write_header = False
   if not pathlib.Path(result_file_name).is_file():
     write_header = True
-  with open(result_file_name, 'a') as csvfile:
+  with open(result_file_name, "a") as csvfile:
     csv_writer = csv.writer(csvfile)
     if write_header:
       csv_writer.writerow(header)
@@ -567,8 +564,10 @@ def main():
       "RESPONSE_DELAY_MILLISECONDS=50", "LIVENESS_SUCCESS_MAX=60", "READINESS_SUCCESS_MAX=30"
   ]
   default_metrics_collected = [
-      "nodeReadyStatus", "nodeCPU", "nodeMemoryAvailable", "nodeMemoryActive", "rxNetworkBytes", "txNetworkBytes",
-      "nodeDiskWrittenBytes", "nodeDiskReadBytes", "kubeletCPU", "kubeletMemory", "crioCPU", "crioMemory"
+      "nodeReadyStatus", "nodeCoresUsed", "nodeCoresNotIdle",
+      "kubeletCPU", "kubeletMemory", "crioCPU", "crioMemory",
+      "nodeCPU", "nodeMemoryAvailable", "nodeMemoryActive",
+      "rxNetworkBytes", "txNetworkBytes", "nodeDiskWrittenBytes", "nodeDiskReadBytes"
   ]
 
   parser = argparse.ArgumentParser(
@@ -594,7 +593,7 @@ def main():
                       default="quay.io/redhat-performance/test-gohttp-probe:v0.0.2", help="The container image to use")
   parser.add_argument("--container-port", type=int, default=8000,
                       help="The starting container port to expose (PORT Env Var)")
-  parser.add_argument('-e', "--container-env", nargs='*', default=default_container_env,
+  parser.add_argument("-e", "--container-env", nargs="*", default=default_container_env,
                       help="The container environment variables")
   parser.add_argument("-m", "--configmaps", type=int, default=0, help="Number of configmaps per container")
   parser.add_argument("--secrets", type=int, default=0, help="Number of secrets per container")
@@ -650,7 +649,7 @@ def main():
   parser.add_argument("--prometheus-url", type=str, default="", help="Cluster prometheus URL")
   parser.add_argument("--prometheus-token", type=str, default="", help="Token to access prometheus")
   parser.add_argument(
-      "--metrics", nargs='*', default=default_metrics_collected, help="List of metrics to collect into metrics.csv")
+      "--metrics", nargs="*", default=default_metrics_collected, help="List of metrics to collect into metrics.csv")
 
   # Indexing arguments
   parser.add_argument(
@@ -1029,19 +1028,19 @@ def main():
     if not cliargs.dry_run:
       json_data = json.loads(output)
     else:
-      json_data = {'items': []}
-    for item in json_data['items']:
-      last_timestamp_unix = date_parser.parse(item['lastTimestamp']).timestamp()
+      json_data = {"items": []}
+    for item in json_data["items"]:
+      last_timestamp_unix = date_parser.parse(item["lastTimestamp"]).timestamp()
       logger.debug(
-          "Reviewing NodeNotReady event from {} which last occured {} / {}".format(item['source']['component'],
-          item['lastTimestamp'], last_timestamp_unix))
+          "Reviewing NodeNotReady event from {} which last occured {} / {}".format(item["source"]["component"],
+          item["lastTimestamp"], last_timestamp_unix))
       if last_timestamp_unix >= measurement_start_time:
-        if item['source']['component'] == "node-controller":
+        if item["source"]["component"] == "node-controller":
           nodenotready_node_controller_count += 1
-        elif item['source']['component'] == "kubelet":
+        elif item["source"]["component"] == "kubelet":
           nodenotready_kubelet_count += 1
         else:
-          logger.warning("NodeNotReady, Unrecognized component: {}".format(item['source']['component']))
+          logger.warning("NodeNotReady, Unrecognized component: {}".format(item["source"]["component"]))
       else:
         logger.debug("Event occured before measurement started")
 
@@ -1053,11 +1052,11 @@ def main():
     if not cliargs.dry_run:
       json_data = json.loads(output)
     else:
-      json_data = {'items': []}
-    for item in json_data['items']:
-      last_timestamp_unix = date_parser.parse(item['lastTimestamp']).timestamp()
+      json_data = {"items": []}
+    for item in json_data["items"]:
+      last_timestamp_unix = date_parser.parse(item["lastTimestamp"]).timestamp()
       logger.debug(
-          "Reviewing NodeReady event which last occured {} / {}".format(item['lastTimestamp'], last_timestamp_unix))
+          "Reviewing NodeReady event which last occured {} / {}".format(item["lastTimestamp"], last_timestamp_unix))
       if last_timestamp_unix >= measurement_start_time:
         nodeready_count += 1
       else:
@@ -1080,9 +1079,9 @@ def main():
     if not cliargs.dry_run:
       json_data = json.loads(output)
     else:
-      json_data = {'items': []}
-    for item in json_data['items']:
-      if ns_pattern.search(item['involvedObject']['namespace']) and eviction_pattern.search(item['message']):
+      json_data = {"items": []}
+    for item in json_data["items"]:
+      if ns_pattern.search(item["involvedObject"]["namespace"]) and eviction_pattern.search(item["message"]):
         marked_evictions += 1
     oc_cmd = ["oc", "get", "ev", "-A", "--field-selector", "reason=Killing", "-o", "json"]
     rc, output = command(oc_cmd, cliargs.dry_run, no_log=True)
@@ -1092,9 +1091,9 @@ def main():
     if not cliargs.dry_run:
       json_data = json.loads(output)
     else:
-      json_data = {'items': []}
-    for item in json_data['items']:
-      if ns_pattern.search(item['involvedObject']['namespace']):
+      json_data = {"items": []}
+    for item in json_data["items"]:
+      if ns_pattern.search(item["involvedObject"]["namespace"]):
         killed_pod += 1
     logger.info("boatload-* pods marked for deletion by Taint Manager: {}".format(marked_evictions))
     logger.info("boatload-* pods killed: {}".format(killed_pod))
@@ -1197,15 +1196,13 @@ def main():
     for measurement in measurements:
       pod_latencies[measurement["quantileName"]] = {}
       for stat in kb_stats:
-        pod_latencies[measurement['quantileName']][stat] = measurement[stat]
+        pod_latencies[measurement["quantileName"]][stat] = measurement[stat]
   logger.debug("kube-burner podLatency measurements: {}".format(pod_latencies))
 
   # Read in metrics into metrics csv
   if not cliargs.no_metrics_phase and not cliargs.dry_run:
     metric_collection_start = time.time()
     metrics_data = {}
-    for metric in cliargs.metrics:
-      metrics_data[metric] = {}
     logger.info("Collecting metric data for metrics csv")
     for metric in cliargs.metrics:
       metric_json = os.path.join(metrics_dir, "kube-burner-indexing-{}.json".format(metric))
@@ -1213,19 +1210,36 @@ def main():
       try:
         with open(metric_json) as metric_file:
           measurements = json.load(metric_file)
-          # TODO: Need to account for metrics with more than one machine collected on (labels.node = $NODE)
-          values = [x['value'] for x in measurements]
-          logger.debug("Measurements: {}".format(measurements))
-          logger.debug("Values: {}".format(values))
-          metrics_data[metric]["len"] = len(values)
-          metrics_data[metric]["min"] = np.min(values)
-          metrics_data[metric]["avg"] = np.mean(values)
-          metrics_data[metric]["max"] = np.max(values)
-          metrics_data[metric]["P50"] = np.percentile(values, 50)
-          metrics_data[metric]["P95"] = np.percentile(values, 95)
-          metrics_data[metric]["P99"] = np.percentile(values, 99)
+          for measurement in measurements:
+            metric_key = metric
+            if "instance" in measurement["labels"]:
+              metric_key = "{}_{}".format(metric_key, measurement["labels"]["instance"])
+            if "node" in measurement["labels"]:
+              metric_key = "{}_{}".format(metric_key, measurement["labels"]["node"])
+            if "mode" in measurement["labels"]:
+              metric_key = "{}_{}".format(metric_key, measurement["labels"]["mode"])
+            if "device" in measurement["labels"]:
+              metric_key = "{}_{}".format(metric_key, measurement["labels"]["device"])
+            if not metric_key in metrics_data.keys():
+              metrics_data[metric_key] = {}
+              metrics_data[metric_key]["values"] = []
+            metrics_data[metric_key]["values"].append(measurement["value"])
       except FileNotFoundError as err:
         logger.warning("Metric file was not found: {}".format(err))
+        metrics_data[metric] = {}
+        metrics_data[metric]["values"] = []
+    # metric data is now collected from the files from kube-burner, now process that data
+    for metric in metrics_data:
+      logger.debug("Compute values for {}".format(metric))
+      if len(metrics_data[metric]["values"]) > 0:
+        metrics_data[metric]["len"] = len(metrics_data[metric]["values"])
+        metrics_data[metric]["min"] = np.min(metrics_data[metric]["values"])
+        metrics_data[metric]["avg"] = np.mean(metrics_data[metric]["values"])
+        metrics_data[metric]["max"] = np.max(metrics_data[metric]["values"])
+        metrics_data[metric]["P50"] = np.percentile(metrics_data[metric]["values"], 50)
+        metrics_data[metric]["P95"] = np.percentile(metrics_data[metric]["values"], 95)
+        metrics_data[metric]["P99"] = np.percentile(metrics_data[metric]["values"], 99)
+      else:
         metrics_data[metric]["len"] = 0
         metrics_data[metric]["min"] = 0
         metrics_data[metric]["avg"] = 0
@@ -1233,8 +1247,9 @@ def main():
         metrics_data[metric]["P50"] = 0
         metrics_data[metric]["P95"] = 0
         metrics_data[metric]["P99"] = 0
+      metrics_header.extend(["{}_len".format(metric), "{}_min".format(metric), "{}_avg".format(metric),
+          "{}_max".format(metric), "{}_p50".format(metric), "{}_p95".format(metric), "{}_p99".format(metric)])
     logger.info("Completed collecting metric data for csv in: {}".format(round(time.time() - metric_collection_start, 1)))
-    logger.debug("Collected metrics data: {}".format(metrics_data))
   phase_break()
   logger.info("boatload Stats")
 
@@ -1293,11 +1308,11 @@ def main():
         datetime.utcfromtimestamp(workload_end_time), datetime.utcfromtimestamp(measurement_end_time),
         datetime.utcfromtimestamp(cleanup_end_time), datetime.utcfromtimestamp(end_time), cliargs.csv_title,
         workload_UUID]
-    for metric in cliargs.metrics:
+    for metric in metrics_data:
       metrics_csv.extend([metrics_data[metric]["len"], metrics_data[metric]["min"], metrics_data[metric]["avg"],
           metrics_data[metric]["max"], metrics_data[metric]["P50"], metrics_data[metric]["P95"],
           metrics_data[metric]["P99"]])
-    write_csv_metrics(cliargs.csv_metrics_file, metrics_csv, cliargs.metrics)
+    write_csv_metrics(cliargs.csv_metrics_file, metrics_header, metrics_csv)
 
 if __name__ == '__main__':
   sys.exit(main())
