@@ -115,12 +115,28 @@
   metricName: clusterVersion
   instant: true
 
+#
 # Boatload added metrics
+#
 - query: sum(kube_node_status_condition{status="true", condition="Ready"})
   metricName: nodeReadyStatus
 
+# total cpu cores - idle
 - query: sum(node_cpu_info) by (instance) - on (instance) sum(irate(node_cpu_seconds_total{mode="idle"}[2m])) by (instance)
   metricName: nodeCoresUsed
 
+# total cpu cores - idle+iowait
 - query: sum(node_cpu_info) by (instance) - on (instance) sum(irate(node_cpu_seconds_total{mode=~"idle|iowait"}[2m])) by (instance)
   metricName: nodeCoresNotIdle
+
+# Sourced from /proc/meminfo, total - available = consumed memory
+- query: avg(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) by (instance)
+  metricName: nodeMemoryConsumed
+
+# Kubelet as CPU cores instead of cpu usage %
+- query: sum(irate(process_cpu_seconds_total{service="kubelet",job="kubelet"}[2m])) by (node) and on (node) kube_node_role{role="worker"}
+  metricName: kubeletCoresUsed
+
+# Crio as CPU cores instead of cpu usage %
+- query: sum(irate(process_cpu_seconds_total{service="kubelet",job="crio"}[2m])) by (node) and on (node) kube_node_role{role="worker"}
+  metricName: crioCoresUsed

@@ -564,10 +564,10 @@ def main():
       "RESPONSE_DELAY_MILLISECONDS=50", "LIVENESS_SUCCESS_MAX=60", "READINESS_SUCCESS_MAX=30"
   ]
   default_metrics_collected = [
-      "nodeReadyStatus", "nodeCoresUsed", "nodeCoresNotIdle",
-      "kubeletCPU", "kubeletMemory", "crioCPU", "crioMemory",
-      "nodeCPU", "nodeMemoryAvailable", "nodeMemoryActive",
-      "rxNetworkBytes", "txNetworkBytes", "nodeDiskWrittenBytes", "nodeDiskReadBytes"
+      "nodeReadyStatus", "nodeCoresUsed", "nodeCoresNotIdle", "nodeMemoryConsumed", "nodeMemoryAvailable",
+      "kubeletCoresUsed", "kubeletMemory", "crioCoresUsed", "crioMemory",
+      "rxNetworkBytes", "txNetworkBytes", "nodeDiskWrittenBytes", "nodeDiskReadBytes",
+      "nodeCPU", "nodeMemoryActive", "kubeletCPU", "crioCPU"
   ]
 
   parser = argparse.ArgumentParser(
