@@ -49,12 +49,14 @@ done
 
 measurement=" -D 7200 "
 
-test_index=$((${test_index} + 1))
-echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - long test - ${total_pods} namespaces, 1 deploy, 1 pod, 1 container, gohttp image, 1 service, 1 route, http probes, 8 configmaps, 8 secrets, guaranteed resources"
-logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-${tc_num}.${test_index}.log"
-../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_pods}n-1d-1p-1c-2hr" -n ${total_pods} -d 1 -p 1 -c 1 -l -r ${configmaps_secrets} ${probes} ${resources} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
-echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - long test complete"
-echo "****************************************************************************************************************************************"
-
+for iteration in `seq 1 ${iterations}`; do
+  test_index=$((${test_index} + 1))
+  echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - long test - ${total_pods} namespaces, 1 deploy, 1 pod, 1 container, gohttp image, 1 service, 1 route, http probes, 8 configmaps, 8 secrets, guaranteed resources"
+  logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-${tc_num}.${test_index}.log"
+  ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_pods}n-1d-1p-1c-2hr-${iteration}" -n ${total_pods} -d 1 -p 1 -c 1 -l -r ${configmaps_secrets} ${probes} ${resources} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
+  echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - long test complete"
+  sleep ${sleep_period}
+  echo "****************************************************************************************************************************************"
+done
 
 echo "$(date -u +%Y%m%d-%H%M%S) - Test Case ${tc_num} Complete"
