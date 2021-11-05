@@ -1205,7 +1205,7 @@ def main():
     metrics_data = {}
     logger.info("Collecting metric data for metrics csv")
     for metric in cliargs.metrics:
-      metric_json = os.path.join(metrics_dir, "kube-burner-indexing-{}.json".format(metric))
+      metric_json = os.path.join(metrics_dir, "{}-{}.json".format(metric, workload_UUID))
       logger.info("Reading data from {}".format(metric_json))
       try:
         with open(metric_json) as metric_file:

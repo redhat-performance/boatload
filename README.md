@@ -7,9 +7,10 @@ Workloads for OpenShift/Kubernetes clusters.
 The boatload workload is designed to stress test node density and remote worker node clusters.
 
 1. Clone the repo to a bastion machine
-2. Install python requirements - `pip3 install -r requirements.txt`
-3. (Optional) Label nodes with `labeler.py`
-4. Run `boatload.py`
+2. Ensure [kube-burner](https://github.com/cloud-bulldozer/kube-burner) is installed (Version `v0.14.2`)
+3. Install python requirements - `pip3 install -r requirements.txt`
+4. (Optional) Label nodes with `labeler.py`
+5. Run `boatload.py`
 
 ```console
 $ virtualenv .venv
