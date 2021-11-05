@@ -32,7 +32,9 @@
   metricName: crioMemory
 
 # Node metrics
-- query: sum(irate(node_cpu_seconds_total[2m])) by (mode,instance) > 0
+# For Boatload removed > 0 since usually nice cpu does not show up, but when it does it can throw off the csv file
+# - query: sum(irate(node_cpu_seconds_total[2m])) by (mode,instance) > 0
+- query: sum(irate(node_cpu_seconds_total[2m])) by (mode,instance)
   metricName: nodeCPU
 
 - query: avg(node_memory_MemAvailable_bytes) by (instance)
