@@ -563,12 +563,17 @@ def main():
       "LISTEN_DELAY_SECONDS=20", "LIVENESS_DELAY_SECONDS=10", "READINESS_DELAY_SECONDS=30",
       "RESPONSE_DELAY_MILLISECONDS=50", "LIVENESS_SUCCESS_MAX=60", "READINESS_SUCCESS_MAX=30"
   ]
+  # Defaults set for bare-metal cluster nodedensity metrics
   default_metrics_collected = [
-      "nodeReadyStatus", "nodeCoresUsed", "nodeCoresNotIdle", "nodeMemoryConsumed", "nodeMemoryAvailable",
-      "kubeletCoresUsed", "kubeletMemory", "crioCoresUsed", "crioMemory",
-      "rxNetworkBytes", "txNetworkBytes", "nodeDiskWrittenBytes", "nodeDiskReadBytes",
-      "nodeCPU", "nodeMemoryActive", "kubeletCPU", "crioCPU"
+      "nodeReadyStatus", "nodeCoresUsed", "nodeMemoryConsumed", "kubeletCoresUsed",
+      "kubeletMemory", "crioCoresUsed", "crioMemory"
   ]
+  # Recommended SNO nodedensity metrics
+  # default_metrics_collected = [
+  #     "nodeReadyStatus", "nodeCoresUsed", "nodeMemoryConsumed", "kubeletCoresUsed",
+  #     "kubeletMemory", "crioCoresUsed", "crioMemory", "rxNetworkBytes", "txNetworkBytes",
+  #     "nodeDiskWrittenBytes", "nodeDiskReadBytes", "nodeCPU"
+  # ]
 
   parser = argparse.ArgumentParser(
       description="Run boatload",
