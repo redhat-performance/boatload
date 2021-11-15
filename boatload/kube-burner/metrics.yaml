@@ -124,15 +124,18 @@
   metricName: nodeReadyStatus
 
 # total cpu cores - idle
-- query: sum(node_cpu_info) by (instance) - on (instance) sum(irate(node_cpu_seconds_total{mode="idle"}[2m])) by (instance)
+# (Worker nodes only)
+- query: sum(node_cpu_info) by (instance) * on (instance) sum without (node) (label_replace(kube_node_role{role="worker"}, "instance", "$1", "node", "(.*)")) - on (instance) sum(irate(node_cpu_seconds_total{mode="idle"}[2m])) by (instance)
   metricName: nodeCoresUsed
 
-# total cpu cores - idle+iowait
-- query: sum(node_cpu_info) by (instance) - on (instance) sum(irate(node_cpu_seconds_total{mode=~"idle|iowait"}[2m])) by (instance)
-  metricName: nodeCoresNotIdle
+# Reducing number of metrics to capture by commenting this metric.
+# # total cpu cores - idle+iowait
+# - query: sum(node_cpu_info) by (instance) - on (instance) sum(irate(node_cpu_seconds_total{mode=~"idle|iowait"}[2m])) by (instance)
+#   metricName: nodeCoresNotIdle
 
 # Sourced from /proc/meminfo, total - available = consumed memory
-- query: avg(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) by (instance)
+# (Worker nodes only)
+- query: avg(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) by (instance)  * on (instance) sum without (node) (label_replace(kube_node_role{role="worker"}, "instance", "$1", "node", "(.*)"))
   metricName: nodeMemoryConsumed
 
 # Kubelet as CPU cores instead of cpu usage %
