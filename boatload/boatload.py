@@ -58,8 +58,8 @@ jobs:
     waitWhenFinished: true
     jobIterationDelay: 0s
     jobPause: 0s
-    qps: 20
-    burst: 40
+    qps: {{ qps }}
+    burst: {{ burst }}
     verifyObjects: true
     errorOnVerify: false
     objects:
@@ -536,9 +536,9 @@ def write_csv_results(result_file_name, results):
       "title", "workload_uuid", "workload_duration", "measurement_duration", "cleanup_duration", "metrics_duration",
       "total_duration", "namespaces", "deployments", "pods", "containers", "services", "routes", "configmaps",
       "secrets", "image", "cpu_requests", "memory_requests", "cpu_limits", "memory_limits", "startup_probe",
-      "liveness_probe", "readiness_probe", "shared_selectors", "unique_selectors", "tolerations", "duration",
-      "interface", "start_vlan", "end_vlan", "latency", "packet_loss", "bandwidth_limit", "flap_down", "flap_up",
-      "firewall", "network", "indexed", "dry_run", "flapped_down", "NodeNotReady_node-controller",
+      "liveness_probe", "readiness_probe", "shared_selectors", "unique_selectors", "tolerations", "kb_qps", "kb_burst",
+      "duration", "interface", "start_vlan", "end_vlan", "latency", "packet_loss", "bandwidth_limit", "flap_down",
+      "flap_up", "firewall", "network", "indexed", "dry_run", "flapped_down", "NodeNotReady_node-controller",
       "NodeNotReady_kubelet", "NodeReady", "TaintManagerEviction_pods", "killed_pods", "kb_PodScheduled_avg",
       "kb_PodScheduled_max", "kb_PodScheduled_p50", "kb_PodScheduled_p95", "kb_PodScheduled_p99", "kb_Initialized_avg",
       "kb_Initialized_max", "kb_Initialized_p50", "kb_Initialized_p95", "kb_Initialized_p99", "kb_ContainersReady_avg",
@@ -628,6 +628,10 @@ def main():
   parser.add_argument("-u", "--unique-selectors", type=int, default=0, help="How many unique node-selectors to use")
   parser.add_argument("-o", "--offset", type=int, default=0, help="Offset for iterated unique node-selectors")
   parser.add_argument("--tolerations", action="store_true", default=False, help="Include RWN tolerations on pod spec")
+
+  # kube-burner qps/burst settings
+  parser.add_argument("-q", "--kb-qps", type=int, default=20, help="kube-burner qps setting")
+  parser.add_argument("-b", "--kb-burst", type=int, default=40, help="kube-burner burst setting")
 
   # Measurement arguments
   parser.add_argument(
@@ -891,6 +895,8 @@ def main():
         index_server=cliargs.index_server,
         default_index=cliargs.default_index,
         namespaces=cliargs.namespaces,
+        qps=cliargs.kb_qps,
+        burst=cliargs.kb_burst,
         deployments=cliargs.deployments,
         pod_replicas=cliargs.pods,
         containers=cliargs.containers,
@@ -1297,10 +1303,10 @@ def main():
       cliargs.namespaces, cliargs.deployments, cliargs.pods, cliargs.containers, int(cliargs.service),
       int(cliargs.route), cliargs.configmaps, cliargs.secrets, cliargs.container_image, cliargs.cpu_requests,
       cliargs.memory_requests, cliargs.cpu_limits, cliargs.memory_limits, cliargs.startup_probe, cliargs.liveness_probe,
-      cliargs.readiness_probe, cliargs.shared_selectors, cliargs.unique_selectors, cliargs.tolerations,
-      cliargs.duration, cliargs.interface, cliargs.start_vlan, cliargs.end_vlan, cliargs.latency, cliargs.packet_loss,
-      cliargs.bandwidth_limit, cliargs.link_flap_down, cliargs.link_flap_up, cliargs.link_flap_firewall,
-      cliargs.link_flap_network, indexing_enabled, cliargs.dry_run, link_flap_count,
+      cliargs.readiness_probe, cliargs.shared_selectors, cliargs.unique_selectors, cliargs.tolerations, cliargs.kb_qps,
+      cliargs.kb_burst, cliargs.duration, cliargs.interface, cliargs.start_vlan, cliargs.end_vlan, cliargs.latency,
+      cliargs.packet_loss, cliargs.bandwidth_limit, cliargs.link_flap_down, cliargs.link_flap_up,
+      cliargs.link_flap_firewall, cliargs.link_flap_network, indexing_enabled, cliargs.dry_run, link_flap_count,
       nodenotready_node_controller_count, nodenotready_kubelet_count, nodeready_count, marked_evictions, killed_pod]
   for measurement in kb_measurements:
     for stat in kb_stats:
