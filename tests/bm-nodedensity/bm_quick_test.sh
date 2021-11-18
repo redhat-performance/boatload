@@ -2,6 +2,7 @@
 set -e
 set -o pipefail
 
+# 250 pods x 3 w/ 4 Containers
 # 500 pods x 3 w/ 3 Containers
 # Guaranteed pods 500 x 3
 # configmaps/secrets 8 pods 500/node x 3
@@ -23,6 +24,7 @@ fi
 
 nodes=$(oc get no -l jetlag=true --no-headers | wc -l)
 
+qps_burst="-q 60 -b 60"
 gohttp_env_vars="-e LISTEN_DELAY_SECONDS=0 LIVENESS_DELAY_SECONDS=0 READINESS_DELAY_SECONDS=0 RESPONSE_DELAY_MILLISECONDS=0 LIVENESS_SUCCESS_MAX=0 READINESS_SUCCESS_MAX=0"
 measurement="-D 180"
 sleep_period=120
@@ -49,7 +51,7 @@ for iteration in `seq 1 ${iterations}`; do
   test_index=$((${test_index} + 1))
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_250_pods} namespaces, 1 deploy, 1 pod, ${containers[$arg_index]} containers, gohttp image, 1 service, 1 route, no probes, no configmaps, no secrets, no resources set"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-${tc_num}.${test_index}.log"
-  ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_250_pods}n-1d-1p-4c-${iteration}" -n ${total_250_pods} -d 1 -p 1 -c 4 -l -r --no-probes ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
+  ../../boatload/boatload.py ${dryrun} ${qps_burst} ${csvfile} --csv-title "${total_250_pods}n-1d-1p-4c-${iteration}" -n ${total_250_pods} -d 1 -p 1 -c 4 -l -r --no-probes ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} complete, sleeping ${sleep_period}"
   sleep ${sleep_period}
   echo "****************************************************************************************************************************************"
@@ -64,7 +66,7 @@ for iteration in `seq 1 ${iterations}`; do
   test_index=$((${test_index} + 1))
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_500_pods} namespaces, 1 deploy, 1 pod, ${containers[$arg_index]} containers, gohttp image, 1 service, 1 route, no probes, no configmaps, no secrets, no resources set"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-${tc_num}.${test_index}.log"
-  ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_500_pods}n-1d-1p-3c-${iteration}" -n ${total_500_pods} -d 1 -p 1 -c 3 -l -r --no-probes ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
+  ../../boatload/boatload.py ${dryrun} ${qps_burst} ${csvfile} --csv-title "${total_500_pods}n-1d-1p-3c-${iteration}" -n ${total_500_pods} -d 1 -p 1 -c 3 -l -r --no-probes ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} complete, sleeping ${sleep_period}"
   sleep ${sleep_period}
   echo "****************************************************************************************************************************************"
@@ -80,7 +82,7 @@ for iteration in `seq 1 ${iterations}`; do
   resources=" --cpu-requests 50 --memory-requests 100 --cpu-limits 50 --memory-limits 100 "
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_500_pods} namespaces, 1 deploy, 1 pod, 1 container, gohttp image, 1 service, 1 route, no probes, no configmaps, no secrets, ${resources}"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-${tc_num}.${test_index}.log"
-  ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_500_pods}n-1d-1p-1c-gu-${iteration}" -n ${total_500_pods} -d 1 -p 1 -c 1 -l -r --no-probes ${resources} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
+  ../../boatload/boatload.py ${dryrun} ${qps_burst} ${csvfile} --csv-title "${total_500_pods}n-1d-1p-1c-gu-${iteration}" -n ${total_500_pods} -d 1 -p 1 -c 1 -l -r --no-probes ${resources} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} complete, sleeping ${sleep_period}"
   sleep ${sleep_period}
   echo "****************************************************************************************************************************************"
@@ -95,7 +97,7 @@ for iteration in `seq 1 ${iterations}`; do
   test_index=$((${test_index} + 1))
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_500_pods} namespaces, 1 deploy, 1 pod, 1 container, gohttp image, 1 service, 1 route, no probes, 8 configmaps, 8 secrets, no resources set"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-${tc_num}.${test_index}.log"
-  ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_500_pods}n-1d-1p-1c-8cm-8s-${iteration}" -n ${total_500_pods} -d 1 -p 1 -c 1 -l -r -m 8 --secrets 8 --no-probes ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
+  ../../boatload/boatload.py ${dryrun} ${qps_burst} ${csvfile} --csv-title "${total_500_pods}n-1d-1p-1c-8cm-8s-${iteration}" -n ${total_500_pods} -d 1 -p 1 -c 1 -l -r -m 8 --secrets 8 --no-probes ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} complete, sleeping ${sleep_period}"
   sleep ${sleep_period}
   echo "****************************************************************************************************************************************"
@@ -111,7 +113,7 @@ for iteration in `seq 1 ${iterations}`; do
   probes="--startup-probe tcp,0,1,1,12 --liveness-probe tcp,0,1,1,3 --readiness-probe tcp,0,1,1,3,1"
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_500_pods} namespaces, 1 deploy, 1 pod, 1 container, gohttp image, 1 service, 1 route, ${probes}, no configmaps, no secrets, no resources set"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-${tc_num}.${test_index}.log"
-  ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_500_pods}n-1d-1p-1c-tcp-s1-l1-r1-${iteration}" -n ${total_500_pods} -d 1 -p 1 -c 1 -l -r ${probes} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
+  ../../boatload/boatload.py ${dryrun} ${qps_burst} ${csvfile} --csv-title "${total_500_pods}n-1d-1p-1c-tcp-s1-l1-r1-${iteration}" -n ${total_500_pods} -d 1 -p 1 -c 1 -l -r ${probes} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} complete, sleeping ${sleep_period}"
   sleep ${sleep_period}
   echo "****************************************************************************************************************************************"
@@ -127,7 +129,7 @@ for iteration in `seq 1 ${iterations}`; do
   probes="--startup-probe http,0,1,1,12 --liveness-probe http,0,1,1,3 --readiness-probe http,0,1,1,3,1"
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_500_pods} namespaces, 1 deploy, 1 pod, 1 container, gohttp image, 1 service, 1 route, ${probes}, no configmaps, no secrets, no resources set"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-${tc_num}.${test_index}.log"
-  ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_500_pods}n-1d-1p-1c-http-s1-l1-r1-${iteration}" -n ${total_500_pods} -d 1 -p 1 -c 1 -l -r ${probes} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
+  ../../boatload/boatload.py ${dryrun} ${qps_burst} ${csvfile} --csv-title "${total_500_pods}n-1d-1p-1c-http-s1-l1-r1-${iteration}" -n ${total_500_pods} -d 1 -p 1 -c 1 -l -r ${probes} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} complete, sleeping ${sleep_period}"
   sleep ${sleep_period}
   echo "****************************************************************************************************************************************"
@@ -143,7 +145,7 @@ for iteration in `seq 1 ${iterations}`; do
   probes="--startup-probe exec,0,10,1,12 --liveness-probe exec,0,10,1,3 --readiness-probe exec,0,10,1,3,1"
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_500_pods} namespaces, 1 deploy, 1 pod, 1 container, gohttp image, 1 service, 1 route, ${probes}, no configmaps, no secrets, no resources set"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-${tc_num}.${test_index}.log"
-  ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_500_pods}n-1d-1p-1c-exec-s10-l10-r10-${iteration}" -n ${total_500_pods} -d 1 -p 1 -c 1 -l -r ${probes} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
+  ../../boatload/boatload.py ${dryrun} ${qps_burst} ${csvfile} --csv-title "${total_500_pods}n-1d-1p-1c-exec-s10-l10-r10-${iteration}" -n ${total_500_pods} -d 1 -p 1 -c 1 -l -r ${probes} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} complete, sleeping ${sleep_period}"
   sleep ${sleep_period}
   echo "****************************************************************************************************************************************"
@@ -161,7 +163,7 @@ for iteration in `seq 1 ${iterations}`; do
   resources=" --cpu-requests 50 --memory-requests 100 --cpu-limits 50 --memory-limits 100 "
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_500_pods} namespaces, 1 deploy, 1 pod, 1 container, gohttp image, 1 service, 1 route, http probes, 8 configmaps, 8 secrets, guaranteed resources"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-${tc_num}.${test_index}.log"
-  ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_500_pods}n-1d-1p-1c-${iteration}" -n ${total_500_pods} -d 1 -p 1 -c 1 -l -r ${configmaps_secrets} ${probes} ${resources} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
+  ../../boatload/boatload.py ${dryrun} ${qps_burst} ${csvfile} --csv-title "${total_500_pods}n-1d-1p-1c-${iteration}" -n ${total_500_pods} -d 1 -p 1 -c 1 -l -r ${configmaps_secrets} ${probes} ${resources} ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} complete, sleeping ${sleep_period}"
   sleep ${sleep_period}
   echo "****************************************************************************************************************************************"
