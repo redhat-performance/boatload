@@ -83,6 +83,10 @@ jobs:
           limits:
             cpu: {{ cpu_limits }}m
             memory: {{ memory_limits }}Mi
+        pod_annotations:
+        {%- for item in pod_annotations %}
+        - {{ item | tojson }}
+        {%- endfor %}
         container_env_args: {{ container_env_args }}
         enable_startup_probe: {{ startup_probe_args | length > 0 }}
         enable_liveness_probe: {{ liveness_probe_args | length > 0 }}
@@ -177,6 +181,10 @@ spec:
     resources: {}
   template:
     metadata:
+      annotations:
+        {{ range .pod_annotations }}
+        {{ . }}
+        {{ end }}
       labels:
         app: boatload-{{ .Iteration }}-{{ .Replica }}
     spec:
@@ -559,6 +567,12 @@ def write_csv_results(result_file_name, results):
 def main():
   start_time = time.time()
 
+  # Default annotation is to apply an additional network (net1) from default namespace
+  # Annotations are disabled by default
+  default_pod_annotations = [
+      "k8s.v1.cni.cncf.io/networks='[{\"name\": \"net1\", \"namespace\": \"default\"}]'"
+  ]
+
   default_container_env = [
       "LISTEN_DELAY_SECONDS=20", "LIVENESS_DELAY_SECONDS=10", "READINESS_DELAY_SECONDS=30",
       "RESPONSE_DELAY_MILLISECONDS=50", "LIVENESS_SUCCESS_MAX=60", "READINESS_SUCCESS_MAX=30"
@@ -592,6 +606,11 @@ def main():
   parser.add_argument("-r", "--route", action="store_true", default=False, help="Include route per deployment")
   parser.add_argument("-p", "--pods", type=int, default=1, help="Number of pod replicas per deployment to create")
   parser.add_argument("-c", "--containers", type=int, default=1, help="Number of containers per pod replica to create")
+
+  # Workload annotation arguments
+  parser.add_argument("--enable-pod-annotations", action="store_true", default=False, help="Enable pod annotations")
+  parser.add_argument("-a", "--pod-annotations", nargs="*", default=default_pod_annotations,
+                      help="The pod annotations")
 
   # Workload container image, port, environment, and resources arguments
   parser.add_argument("-i", "--container-image", type=str,
@@ -688,6 +707,12 @@ def main():
     logger.info("boatload")
   phase_break()
   logger.debug("CLI Args: {}".format(cliargs))
+
+  if cliargs.enable_pod_annotations:
+    pd_annotations_parsed = [annotation.replace("=", ": ") for annotation in cliargs.pod_annotations]
+    cliargs.pod_annotations = pd_annotations_parsed
+  else:
+    cliargs.pod_annotations = []
 
   container_env_args = parse_container_env_args(cliargs.container_env)
 
@@ -822,6 +847,7 @@ def main():
     logger.info("  * {} Container(s) per pod replica".format(cliargs.containers))
     logger.info("  * {} ConfigMap(s) per deployment".format(cliargs.configmaps))
     logger.info("  * {} Secret(s) per deployment".format(cliargs.secrets))
+    logger.info("  * Pod Annotations: {}".format(cliargs.pod_annotations))
     logger.info("  * Container Image: {}".format(cliargs.container_image))
     logger.info("  * Container starting port: {}".format(cliargs.container_port))
     logger.info("  * Container CPU: {}m requests, {}m limits".format(cliargs.cpu_requests, cliargs.cpu_limits))
@@ -908,6 +934,7 @@ def main():
         cpu_limits=cliargs.cpu_limits,
         memory_requests=cliargs.memory_requests,
         memory_limits=cliargs.memory_limits,
+        pod_annotations=cliargs.pod_annotations,
         container_env_args=container_env_args,
         startup_probe_args=startup_probe_args,
         liveness_probe_args=liveness_probe_args,

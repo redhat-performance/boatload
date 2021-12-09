@@ -53,7 +53,7 @@ Additional Pre-req for Remote Worker Node Test Environments:
 
 The boatload workload runs in several distinct phases:
 
-1. Workload - Load cluster with Namespaces, Deployments, Pods, and Services
+1. Workload - Load cluster with Namespaces, Deployments, Pods, Services, Routes, ConfigMaps, and Secrets
 2. Measurement - Period of time to allow for measurements/metrics while cluster is loaded, and optional network impairments for a duration
 3. Cleanup - Cleanup workload off cluster
 4. Metrics - Metrics are collected from prometheus by kube-burner and can be indexed
@@ -65,16 +65,16 @@ boatload workload arguments:
 ```console
 $ ./boatload/boatload.py -h
 usage: boatload.py [-h] [--no-workload-phase] [--no-measurement-phase] [--no-cleanup-phase] [--no-metrics-phase] [-n NAMESPACES] [-d DEPLOYMENTS] [-l] [-r] [-p PODS] [-c CONTAINERS]
-                   [-i CONTAINER_IMAGE] [--container-port CONTAINER_PORT] [-e [CONTAINER_ENV ...]] [-m CONFIGMAPS] [--secrets SECRETS] [--cpu-requests CPU_REQUESTS]
-                   [--memory-requests MEMORY_REQUESTS] [--cpu-limits CPU_LIMITS] [--memory-limits MEMORY_LIMITS] [--startup-probe STARTUP_PROBE] [--liveness-probe LIVENESS_PROBE]
-                   [--readiness-probe READINESS_PROBE] [--startup-probe-endpoint STARTUP_PROBE_ENDPOINT] [--liveness-probe-endpoint LIVENESS_PROBE_ENDPOINT]
-                   [--readiness-probe-endpoint READINESS_PROBE_ENDPOINT] [--startup-probe-exec-command STARTUP_PROBE_EXEC_COMMAND]
+                   [--enable-pod-annotations] [-a [POD_ANNOTATIONS ...]] [-i CONTAINER_IMAGE] [--container-port CONTAINER_PORT] [-e [CONTAINER_ENV ...]] [-m CONFIGMAPS] [--secrets SECRETS]
+                   [--cpu-requests CPU_REQUESTS] [--memory-requests MEMORY_REQUESTS] [--cpu-limits CPU_LIMITS] [--memory-limits MEMORY_LIMITS] [--startup-probe STARTUP_PROBE]
+                   [--liveness-probe LIVENESS_PROBE] [--readiness-probe READINESS_PROBE] [--startup-probe-endpoint STARTUP_PROBE_ENDPOINT]
+                   [--liveness-probe-endpoint LIVENESS_PROBE_ENDPOINT] [--readiness-probe-endpoint READINESS_PROBE_ENDPOINT] [--startup-probe-exec-command STARTUP_PROBE_EXEC_COMMAND]
                    [--liveness-probe-exec-command LIVENESS_PROBE_EXEC_COMMAND] [--readiness-probe-exec-command READINESS_PROBE_EXEC_COMMAND] [--no-probes]
-                   [--default-selector DEFAULT_SELECTOR] [-s SHARED_SELECTORS] [-u UNIQUE_SELECTORS] [-o OFFSET] [--tolerations] [-D DURATION] [-I INTERFACE] [-S START_VLAN] [-E END_VLAN]
-                   [-L LATENCY] [-P PACKET_LOSS] [-B BANDWIDTH_LIMIT] [-F LINK_FLAP_DOWN] [-U LINK_FLAP_UP] [-T] [-N LINK_FLAP_NETWORK] [--metrics-profile METRICS_PROFILE]
-                   [--prometheus-url PROMETHEUS_URL] [--prometheus-token PROMETHEUS_TOKEN] [--metrics [METRICS ...]] [--index-server INDEX_SERVER] [--default-index DEFAULT_INDEX]
-                   [--measurements-index MEASUREMENTS_INDEX] [--csv-results-file CSV_RESULTS_FILE] [--csv-metrics-file CSV_METRICS_FILE] [--csv-title CSV_TITLE] [--debug] [--dry-run]
-                   [--reset]
+                   [--default-selector DEFAULT_SELECTOR] [-s SHARED_SELECTORS] [-u UNIQUE_SELECTORS] [-o OFFSET] [--tolerations] [-q KB_QPS] [-b KB_BURST] [-D DURATION] [-I INTERFACE]
+                   [-S START_VLAN] [-E END_VLAN] [-L LATENCY] [-P PACKET_LOSS] [-B BANDWIDTH_LIMIT] [-F LINK_FLAP_DOWN] [-U LINK_FLAP_UP] [-T] [-N LINK_FLAP_NETWORK]
+                   [--metrics-profile METRICS_PROFILE] [--prometheus-url PROMETHEUS_URL] [--prometheus-token PROMETHEUS_TOKEN] [--metrics [METRICS ...]] [--index-server INDEX_SERVER]
+                   [--default-index DEFAULT_INDEX] [--measurements-index MEASUREMENTS_INDEX] [--csv-results-file CSV_RESULTS_FILE] [--csv-metrics-file CSV_METRICS_FILE]
+                   [--csv-title CSV_TITLE] [--debug] [--dry-run] [--reset]
 
 Run boatload
 
@@ -94,6 +94,10 @@ optional arguments:
   -p PODS, --pods PODS  Number of pod replicas per deployment to create (default: 1)
   -c CONTAINERS, --containers CONTAINERS
                         Number of containers per pod replica to create (default: 1)
+  --enable-pod-annotations
+                        Enable pod annotations (default: False)
+  -a [POD_ANNOTATIONS ...], --pod-annotations [POD_ANNOTATIONS ...]
+                        The pod annotations (default: ['k8s.v1.cni.cncf.io/networks=\'[{"name": "net1", "namespace": "default"}]\' '])
   -i CONTAINER_IMAGE, --container-image CONTAINER_IMAGE
                         The container image to use (default: quay.io/redhat-performance/test-gohttp-probe:v0.0.2)
   --container-port CONTAINER_PORT
@@ -140,6 +144,10 @@ optional arguments:
   -o OFFSET, --offset OFFSET
                         Offset for iterated unique node-selectors (default: 0)
   --tolerations         Include RWN tolerations on pod spec (default: False)
+  -q KB_QPS, --kb-qps KB_QPS
+                        kube-burner qps setting (default: 20)
+  -b KB_BURST, --kb-burst KB_BURST
+                        kube-burner burst setting (default: 40)
   -D DURATION, --duration DURATION
                         Duration of measurement/impairment phase (Seconds) (default: 30)
   -I INTERFACE, --interface INTERFACE
@@ -169,9 +177,8 @@ optional arguments:
   --prometheus-token PROMETHEUS_TOKEN
                         Token to access prometheus (default: )
   --metrics [METRICS ...]
-                        List of metrics to collect into metrics.csv (default: ['nodeReadyStatus', 'nodeCoresUsed', 'nodeCoresNotIdle', 'nodeMemoryConsumed', 'nodeMemoryAvailable',
-                        'kubeletCoresUsed', 'kubeletMemory', 'crioCoresUsed', 'crioMemory', 'rxNetworkBytes', 'txNetworkBytes', 'nodeDiskWrittenBytes', 'nodeDiskReadBytes', 'nodeCPU',
-                        'nodeMemoryActive', 'kubeletCPU', 'crioCPU'])
+                        List of metrics to collect into metrics.csv (default: ['nodeReadyStatus', 'nodeCoresUsed', 'nodeMemoryConsumed', 'kubeletCoresUsed', 'kubeletMemory',
+                        'crioCoresUsed', 'crioMemory'])
   --index-server INDEX_SERVER
                         ElasticSearch server (Ex https://user:password@example.org:9200) (default: )
   --default-index DEFAULT_INDEX
@@ -307,3 +314,17 @@ env:
 ```
 
 The `PORT` environment variable is provided automatically and incremented based on the number of containers specified (`-c` argument). Combined with container image `quay.io/redhat-performance/test-gohttp-probe`, these environment vars configure the behavior of the app to the kubernetes probes. The example provided is actually the default.
+
+## boatload workload pod annotations configuration
+
+Custom pod annotations can be added to each deployment pod template spec. This allows applying configurations such as a second network for the workload pod. This example cli passes in an annotation that adds a second network interface to the workload pod from network-attachment-definition `net1` in namespace `default`.
+
+```console
+$ ./boatload/boatload.py --enable-pod-annotations --pod-annotations k8s.v1.cni.cncf.io/networks=\''[{"name": "net1", "namespace": "default"}]'\'
+```
+
+Example of passing multiple pod annotations via cli in Bash shell.
+
+```console
+$ ./boatload/boatload.py --enable-pod-annotations -a k8s.v1.cni.cncf.io/networks=\''[{"name": "net1", "namespace": "default"}]'\' test=\''true'\'
+```
