@@ -47,7 +47,7 @@ echo "$(date -u +%Y%m%d-%H%M%S) - Total Pod Count (Nodes * pods/node) :: ${nodes
 echo "****************************************************************************************************************************************"
 for iteration in `seq 1 ${iterations}`; do
   test_index=$((${test_index} + 1))
-  echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_pods} namespaces, 1 deploy, 1 pod, ${containers[$arg_index]} containers, gohttp image, 1 service, 1 route, no probes, no configmaps, no secrets, no resources set"
+  echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_pods} namespaces, 1 deploy, 1 pod, 1 containers, gohttp image, 1 service, 1 route, no probes, no configmaps, no secrets, no resources set"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-${tc_num}.${test_index}.log"
   ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_pods}n-1d-1p-1c-${iteration}" ${metrics} -n ${total_pods} -d 1 -p 1 -c 1 -l -r --no-probes ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} complete, sleeping ${sleep_period}"
@@ -64,7 +64,7 @@ echo "$(date -u +%Y%m%d-%H%M%S) - Total Pod Count (Nodes * pods/node) :: ${nodes
 echo "****************************************************************************************************************************************"
 for iteration in `seq 1 ${iterations}`; do
   test_index=$((${test_index} + 1))
-  echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_pods} namespaces, 1 deploy, 1 pod, ${containers[$arg_index]} containers, gohttp image, 1 service, 1 route, no probes, no configmaps, no secrets, no resources set"
+  echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_pods} namespaces, 1 deploy, 1 pod, 1 containers, gohttp image, 1 service, 1 route, no probes, no configmaps, no secrets, no resources set"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-${tc_num}.${test_index}.log"
   ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_pods}n-1d-1p-1c-${iteration}" ${metrics} -n ${total_pods} -d 1 -p 1 -c 1 -l -r --no-probes ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} complete, sleeping ${sleep_period}"
@@ -81,7 +81,7 @@ echo "$(date -u +%Y%m%d-%H%M%S) - Total Pod Count (Nodes * pods/node) :: ${nodes
 echo "****************************************************************************************************************************************"
 for iteration in `seq 1 ${iterations}`; do
   test_index=$((${test_index} + 1))
-  echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_pods} namespaces, 1 deploy, 1 pod, ${containers[$arg_index]} containers, gohttp image, 1 service, 1 route, no probes, no configmaps, no secrets, no resources set"
+  echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_pods} namespaces, 1 deploy, 1 pod, 1 containers, gohttp image, 1 service, 1 route, no probes, no configmaps, no secrets, no resources set"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-${tc_num}.${test_index}.log"
   ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_pods}n-1d-1p-1c-${iteration}" ${metrics} -n ${total_pods} -d 1 -p 1 -c 1 -l -r --no-probes ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} complete, sleeping ${sleep_period}"
@@ -98,7 +98,7 @@ echo "$(date -u +%Y%m%d-%H%M%S) - Total Pod Count (Nodes * pods/node) :: ${nodes
 echo "****************************************************************************************************************************************"
 for iteration in `seq 1 ${iterations}`; do
   test_index=$((${test_index} + 1))
-  echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_pods} namespaces, 1 deploy, 1 pod, ${containers[$arg_index]} containers, gohttp image, 1 service, 1 route, no probes, no configmaps, no secrets, no resources set"
+  echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_pods} namespaces, 1 deploy, 1 pod, 1 containers, gohttp image, 1 service, 1 route, no probes, no configmaps, no secrets, no resources set"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-${tc_num}.${test_index}.log"
   ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_pods}n-1d-1p-1c-${iteration}" ${metrics} -n ${total_pods} -d 1 -p 1 -c 1 -l -r --no-probes ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} complete, sleeping ${sleep_period}"
@@ -115,7 +115,7 @@ echo "$(date -u +%Y%m%d-%H%M%S) - Total Pod Count (Nodes * pods/node) :: ${nodes
 echo "****************************************************************************************************************************************"
 for iteration in `seq 1 ${iterations}`; do
   test_index=$((${test_index} + 1))
-  echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_pods} namespaces, 1 deploy, 1 pod, ${containers[$arg_index]} containers, gohttp image, 1 service, 1 route, no probes, no configmaps, no secrets, no resources set"
+  echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_pods} namespaces, 1 deploy, 1 pod, 1 containers, gohttp image, 1 service, 1 route, no probes, no configmaps, no secrets, no resources set"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-${tc_num}.${test_index}.log"
   ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_pods}n-1d-1p-1c-${iteration}" ${metrics} -n ${total_pods} -d 1 -p 1 -c 1 -l -r --no-probes ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} complete, sleeping ${sleep_period}"
@@ -132,7 +132,7 @@ echo "$(date -u +%Y%m%d-%H%M%S) - Total Pod Count (Nodes * pods/node) :: ${nodes
 echo "****************************************************************************************************************************************"
 for iteration in `seq 1 ${iterations}`; do
   test_index=$((${test_index} + 1))
-  echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_pods} namespaces, 1 deploy, 1 pod, ${containers[$arg_index]} containers, gohttp image, 1 service, 1 route, no probes, no configmaps, no secrets, no resources set"
+  echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} - ${total_pods} namespaces, 1 deploy, 1 pod, 1 containers, gohttp image, 1 service, 1 route, no probes, no configmaps, no secrets, no resources set"
   logfile="../logs/$(date -u +%Y%m%d-%H%M%S)-nodedensity-${tc_num}.${test_index}.log"
   ../../boatload/boatload.py ${dryrun} ${csvfile} --csv-title "${total_pods}n-1d-1p-1c-${iteration}" ${metrics} -n ${total_pods} -d 1 -p 1 -c 1 -l -r --no-probes ${gohttp_env_vars} ${measurement} ${INDEX_ARGS} &> ${logfile}
   echo "$(date -u +%Y%m%d-%H%M%S) - node density ${tc_num}.${test_index} - ${iteration}/${iterations} complete, sleeping ${sleep_period}"
