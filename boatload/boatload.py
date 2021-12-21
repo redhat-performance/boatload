@@ -691,6 +691,7 @@ def main():
   parser.add_argument("--csv-title", type=str, default="untitled", help="Determines title of row of data")
 
   # Other arguments
+  parser.add_argument("--cleanup", action="store_true", default=False, help="Shortcut to only run cleanup phase")
   parser.add_argument("--debug", action="store_true", default=False, help="Set log level debug")
   parser.add_argument("--dry-run", action="store_true", default=False, help="Echos commands instead of executing them")
   parser.add_argument("--reset", action="store_true", default=False, help="Attempts to undo all network impairments")
@@ -744,6 +745,13 @@ def main():
   if cliargs.no_workload_phase and cliargs.no_measurement_phase and cliargs.no_cleanup_phase:
     logger.error("No meaningful phases enabled. Exiting...")
     sys.exit(0)
+
+  if cliargs.cleanup:
+    logger.info("--cleanup set, only running cleanup phase")
+    cliargs.no_workload_phase = True
+    cliargs.no_measurement_phase = True
+    cliargs.no_cleanup_phase = False
+    cliargs.no_metrics_phase = True
 
   # Validate link flap args
   flap_links = False
@@ -900,8 +908,9 @@ def main():
       logger.info("  * ES index: {}".format(cliargs.default_index))
     logger.info("  * Metrics csv file: {}".format(cliargs.csv_metrics_file))
     logger.info("  * Metrics to collect in csv: {}".format(cliargs.metrics))
-  logger.info("Results csv file: {}".format(cliargs.csv_results_file))
-  logger.info("Results title: {}".format(cliargs.csv_title))
+  if not cliargs.cleanup:
+    logger.info("Results csv file: {}".format(cliargs.csv_results_file))
+    logger.info("Results title: {}".format(cliargs.csv_title))
 
   # Workload UUID is used with both workload and cleanup phases
   workload_UUID = str(uuid.uuid4())
@@ -1321,24 +1330,26 @@ def main():
   if not cliargs.no_metrics_phase:
     logger.info("Workload UUID: {}".format(workload_UUID))
 
-  # Milliseconds to Seconds * 1000 (For using the timestamp in Grafana, it must be a Unix timestamp in milliseconds)
-  results = [int(start_time * 1000), int(workload_end_time * 1000), int(measurement_end_time * 1000),
-      int(cleanup_end_time * 1000), int(end_time * 1000), datetime.utcfromtimestamp(start_time),
-      datetime.utcfromtimestamp(workload_end_time), datetime.utcfromtimestamp(measurement_end_time),
-      datetime.utcfromtimestamp(cleanup_end_time), datetime.utcfromtimestamp(end_time), cliargs.csv_title,
-      workload_UUID, workload_duration, measurement_duration, cleanup_duration, metrics_duration, total_time,
-      cliargs.namespaces, cliargs.deployments, cliargs.pods, cliargs.containers, int(cliargs.service),
-      int(cliargs.route), cliargs.configmaps, cliargs.secrets, cliargs.container_image, cliargs.cpu_requests,
-      cliargs.memory_requests, cliargs.cpu_limits, cliargs.memory_limits, cliargs.startup_probe, cliargs.liveness_probe,
-      cliargs.readiness_probe, cliargs.shared_selectors, cliargs.unique_selectors, cliargs.tolerations, cliargs.kb_qps,
-      cliargs.kb_burst, cliargs.duration, cliargs.interface, cliargs.start_vlan, cliargs.end_vlan, cliargs.latency,
-      cliargs.packet_loss, cliargs.bandwidth_limit, cliargs.link_flap_down, cliargs.link_flap_up,
-      cliargs.link_flap_firewall, cliargs.link_flap_network, indexing_enabled, cliargs.dry_run, link_flap_count,
-      nodenotready_node_controller_count, nodenotready_kubelet_count, nodeready_count, marked_evictions, killed_pod]
-  for measurement in kb_measurements:
-    for stat in kb_stats:
-      results.append(pod_latencies[measurement][stat])
-  write_csv_results(cliargs.csv_results_file, results)
+
+  if not cliargs.cleanup:
+    # Milliseconds to Seconds * 1000 (For using the timestamp in Grafana, it must be a Unix timestamp in milliseconds)
+    results = [int(start_time * 1000), int(workload_end_time * 1000), int(measurement_end_time * 1000),
+        int(cleanup_end_time * 1000), int(end_time * 1000), datetime.utcfromtimestamp(start_time),
+        datetime.utcfromtimestamp(workload_end_time), datetime.utcfromtimestamp(measurement_end_time),
+        datetime.utcfromtimestamp(cleanup_end_time), datetime.utcfromtimestamp(end_time), cliargs.csv_title,
+        workload_UUID, workload_duration, measurement_duration, cleanup_duration, metrics_duration, total_time,
+        cliargs.namespaces, cliargs.deployments, cliargs.pods, cliargs.containers, int(cliargs.service),
+        int(cliargs.route), cliargs.configmaps, cliargs.secrets, cliargs.container_image, cliargs.cpu_requests,
+        cliargs.memory_requests, cliargs.cpu_limits, cliargs.memory_limits, cliargs.startup_probe, cliargs.liveness_probe,
+        cliargs.readiness_probe, cliargs.shared_selectors, cliargs.unique_selectors, cliargs.tolerations, cliargs.kb_qps,
+        cliargs.kb_burst, cliargs.duration, cliargs.interface, cliargs.start_vlan, cliargs.end_vlan, cliargs.latency,
+        cliargs.packet_loss, cliargs.bandwidth_limit, cliargs.link_flap_down, cliargs.link_flap_up,
+        cliargs.link_flap_firewall, cliargs.link_flap_network, indexing_enabled, cliargs.dry_run, link_flap_count,
+        nodenotready_node_controller_count, nodenotready_kubelet_count, nodeready_count, marked_evictions, killed_pod]
+    for measurement in kb_measurements:
+      for stat in kb_stats:
+        results.append(pod_latencies[measurement][stat])
+    write_csv_results(cliargs.csv_results_file, results)
 
   if not cliargs.no_metrics_phase and not cliargs.dry_run:
     metrics_csv = [int(start_time * 1000), int(workload_end_time * 1000), int(measurement_end_time * 1000),
