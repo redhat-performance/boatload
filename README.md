@@ -67,14 +67,13 @@ $ ./boatload/boatload.py -h
 usage: boatload.py [-h] [--no-workload-phase] [--no-measurement-phase] [--no-cleanup-phase] [--no-metrics-phase] [-n NAMESPACES] [-d DEPLOYMENTS] [-l] [-r] [-p PODS] [-c CONTAINERS]
                    [--enable-pod-annotations] [-a [POD_ANNOTATIONS ...]] [-i CONTAINER_IMAGE] [--container-port CONTAINER_PORT] [-e [CONTAINER_ENV ...]] [-m CONFIGMAPS] [--secrets SECRETS]
                    [--cpu-requests CPU_REQUESTS] [--memory-requests MEMORY_REQUESTS] [--cpu-limits CPU_LIMITS] [--memory-limits MEMORY_LIMITS] [--startup-probe STARTUP_PROBE]
-                   [--liveness-probe LIVENESS_PROBE] [--readiness-probe READINESS_PROBE] [--startup-probe-endpoint STARTUP_PROBE_ENDPOINT]
-                   [--liveness-probe-endpoint LIVENESS_PROBE_ENDPOINT] [--readiness-probe-endpoint READINESS_PROBE_ENDPOINT] [--startup-probe-exec-command STARTUP_PROBE_EXEC_COMMAND]
-                   [--liveness-probe-exec-command LIVENESS_PROBE_EXEC_COMMAND] [--readiness-probe-exec-command READINESS_PROBE_EXEC_COMMAND] [--no-probes]
-                   [--default-selector DEFAULT_SELECTOR] [-s SHARED_SELECTORS] [-u UNIQUE_SELECTORS] [-o OFFSET] [--tolerations] [-q KB_QPS] [-b KB_BURST] [-D DURATION] [-I INTERFACE]
-                   [-S START_VLAN] [-E END_VLAN] [-L LATENCY] [-P PACKET_LOSS] [-B BANDWIDTH_LIMIT] [-F LINK_FLAP_DOWN] [-U LINK_FLAP_UP] [-T] [-N LINK_FLAP_NETWORK]
-                   [--metrics-profile METRICS_PROFILE] [--prometheus-url PROMETHEUS_URL] [--prometheus-token PROMETHEUS_TOKEN] [--metrics [METRICS ...]] [--index-server INDEX_SERVER]
-                   [--default-index DEFAULT_INDEX] [--measurements-index MEASUREMENTS_INDEX] [--csv-results-file CSV_RESULTS_FILE] [--csv-metrics-file CSV_METRICS_FILE]
-                   [--csv-title CSV_TITLE] [--debug] [--dry-run] [--reset]
+                   [--liveness-probe LIVENESS_PROBE] [--readiness-probe READINESS_PROBE] [--startup-probe-endpoint STARTUP_PROBE_ENDPOINT] [--liveness-probe-endpoint LIVENESS_PROBE_ENDPOINT]
+                   [--readiness-probe-endpoint READINESS_PROBE_ENDPOINT] [--startup-probe-exec-command STARTUP_PROBE_EXEC_COMMAND] [--liveness-probe-exec-command LIVENESS_PROBE_EXEC_COMMAND]
+                   [--readiness-probe-exec-command READINESS_PROBE_EXEC_COMMAND] [--no-probes] [--default-selector DEFAULT_SELECTOR] [-s SHARED_SELECTORS] [-u UNIQUE_SELECTORS] [-o OFFSET] [--tolerations]
+                   [-q KB_QPS] [-b KB_BURST] [-D DURATION] [-I INTERFACE] [-S START_VLAN] [-E END_VLAN] [-L LATENCY] [-P PACKET_LOSS] [-B BANDWIDTH_LIMIT] [-F LINK_FLAP_DOWN] [-U LINK_FLAP_UP] [-T]
+                   [-N LINK_FLAP_NETWORK] [--metrics-profile METRICS_PROFILE] [--prometheus-url PROMETHEUS_URL] [--prometheus-token PROMETHEUS_TOKEN] [--metrics [METRICS ...]]
+                   [--index-server INDEX_SERVER] [--default-index DEFAULT_INDEX] [--measurements-index MEASUREMENTS_INDEX] [--csv-results-file CSV_RESULTS_FILE] [--csv-metrics-file CSV_METRICS_FILE]
+                   [--csv-title CSV_TITLE] [--cleanup] [--debug] [--dry-run] [--reset]
 
 Run boatload
 
@@ -97,14 +96,14 @@ optional arguments:
   --enable-pod-annotations
                         Enable pod annotations (default: False)
   -a [POD_ANNOTATIONS ...], --pod-annotations [POD_ANNOTATIONS ...]
-                        The pod annotations (default: ['k8s.v1.cni.cncf.io/networks=\'[{"name": "net1", "namespace": "default"}]\' '])
+                        The pod annotations (default: ['k8s.v1.cni.cncf.io/networks=\'[{"name": "net1", "namespace": "default"}]\''])
   -i CONTAINER_IMAGE, --container-image CONTAINER_IMAGE
                         The container image to use (default: quay.io/redhat-performance/test-gohttp-probe:v0.0.2)
   --container-port CONTAINER_PORT
                         The starting container port to expose (PORT Env Var) (default: 8000)
   -e [CONTAINER_ENV ...], --container-env [CONTAINER_ENV ...]
-                        The container environment variables (default: ['LISTEN_DELAY_SECONDS=20', 'LIVENESS_DELAY_SECONDS=10', 'READINESS_DELAY_SECONDS=30',
-                        'RESPONSE_DELAY_MILLISECONDS=50', 'LIVENESS_SUCCESS_MAX=60', 'READINESS_SUCCESS_MAX=30'])
+                        The container environment variables (default: ['LISTEN_DELAY_SECONDS=20', 'LIVENESS_DELAY_SECONDS=10', 'READINESS_DELAY_SECONDS=30', 'RESPONSE_DELAY_MILLISECONDS=50',
+                        'LIVENESS_SUCCESS_MAX=60', 'READINESS_SUCCESS_MAX=30'])
   -m CONFIGMAPS, --configmaps CONFIGMAPS
                         Number of configmaps per container (default: 0)
   --secrets SECRETS     Number of secrets per container (default: 0)
@@ -177,8 +176,8 @@ optional arguments:
   --prometheus-token PROMETHEUS_TOKEN
                         Token to access prometheus (default: )
   --metrics [METRICS ...]
-                        List of metrics to collect into metrics.csv (default: ['nodeReadyStatus', 'nodeCoresUsed', 'nodeMemoryConsumed', 'kubeletCoresUsed', 'kubeletMemory',
-                        'crioCoresUsed', 'crioMemory'])
+                        List of metrics to collect into metrics.csv (default: ['nodeReadyStatus', 'nodeCoresUsed', 'nodeMemoryConsumed', 'kubeletCoresUsed', 'kubeletMemory', 'crioCoresUsed',
+                        'crioMemory'])
   --index-server INDEX_SERVER
                         ElasticSearch server (Ex https://user:password@example.org:9200) (default: )
   --default-index DEFAULT_INDEX
@@ -191,6 +190,7 @@ optional arguments:
                         Determines metrics csv to append to (default: metrics.csv)
   --csv-title CSV_TITLE
                         Determines title of row of data (default: untitled)
+  --cleanup             Shortcut to only run cleanup phase (default: False)
   --debug               Set log level debug (default: False)
   --dry-run             Echos commands instead of executing them (default: False)
   --reset               Attempts to undo all network impairments (default: False)
@@ -248,7 +248,7 @@ $ ./boatload.py -i 'gcr.io/google_containers/pause-amd64:3.0' --no-probes
 
 ## boatload workload container probe configuration
 
-If you use the default container image `quay.io/redhat-performance/test-gohttp-probe:latest`, you can use startup, liveness, and readiness probes. The defaults work but you might want to configure the various probe options or a different image might use different endpoints. The probe configuration arguments are:
+If you use the default container image `quay.io/redhat-performance/test-gohttp-probe:v0.0.2`, you can use startup, liveness, and readiness probes. The defaults work but you might want to configure the various probe options or a different image might use different endpoints. The probe configuration arguments are:
 
 * `--startup-probe STARTUP_PROBE`
 * `--liveness-probe LIVENESS_PROBE`
@@ -327,4 +327,12 @@ Example of passing multiple pod annotations via cli in Bash shell.
 
 ```console
 $ ./boatload/boatload.py --enable-pod-annotations -a k8s.v1.cni.cncf.io/networks=\''[{"name": "net1", "namespace": "default"}]'\' test=\''true'\'
+```
+
+## boatload workload cleanup
+
+The `--cleanup` flag allows you to quickly run only the cleanup phase of the boatload workload in the event testing has caused a large enough failure that removal of the workload is necessary.
+
+```console
+$ ./boatload/boatload.py --cleanup
 ```
