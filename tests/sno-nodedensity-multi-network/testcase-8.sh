@@ -47,7 +47,7 @@ for iteration in `seq 1 ${iterations}`; do
   echo "****************************************************************************************************************************************"
 done
 
-measurement=" -D 7200 "
+measurement=" -D 7200 --enable-pod-annotations "
 
 for iteration in `seq 1 ${iterations}`; do
   test_index=$((${test_index} + 1))
