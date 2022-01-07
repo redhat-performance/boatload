@@ -10,7 +10,8 @@ The boatload workload is designed to stress test node density and remote worker 
 2. Ensure [kube-burner](https://github.com/cloud-bulldozer/kube-burner) is installed (Version `v0.14.3`)
 3. Install python requirements - `pip3 install -r requirements.txt`
 4. (Optional) Label nodes with `labeler.py` (Generally for remote worker node workloads)
-5. Run `boatload.py`
+5. (Optional) Preload images onto nodes
+6. Run `boatload.py`
 
 ```console
 $ virtualenv .venv
@@ -224,6 +225,24 @@ $ ./boatload.py -n 10 -d 10 -p 1
 The above command creates 10 namespaces with 10 deployments, each with 1 pod replica resulting in 100 pods.
 
 To create a service per deployment which will expose and load balance traffic to pod replicas, use the `-l` argument. This is used when you have a readiness probe so that kubernetes must handle endpoints if readiness flaps or fails.
+
+## boatload image preloading
+
+A manifest is included in the boatload repo to facilitate preloading container images to all nodes in a cluster. Prior to running any benchmarks it is best to apply the preload manifest such that the container images are pulled into each node. Subsequently you can delete the preload manifest to remove the extra namespace and daemonset it creates after the pods are running.
+
+```console
+$ oc apply -f manifests/
+namespace/boatload-preload created
+daemonset.apps/boatload-preload created
+$ oc get po -n boatload-preload
+NAME                     READY   STATUS    RESTARTS   AGE
+boatload-preload-7vw9j   3/3     Running   0          23s
+boatload-preload-9p2fq   3/3     Running   0          23s
+boatload-preload-cz7bd   3/3     Running   0          23s
+$ oc delete -f manifests/
+namespace "boatload-preload" deleted
+daemonset.apps "boatload-preload" deleted
+```
 
 ## boatload workload container resource configuration
 
