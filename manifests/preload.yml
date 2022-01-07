@@ -1,0 +1,36 @@
+# Manifests to create a daemonsets for preloading pod images
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  annontations:
+    openshift.io/node-selector: ''
+  name: boatload-preload
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: boatload-preload
+  namespace: boatload-preload
+  labels:
+    k8s-app: boatload-preload
+spec:
+  selector:
+    matchLabels:
+      name: boatload-preload
+  template:
+    metadata:
+      labels:
+        name: boatload-preload
+    spec:
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: boatload-gohttp
+        image: quay.io/redhat-performance/test-gohttp-probe:v0.0.2
+      - name: boatload-pause
+        image: gcr.io/google_containers/pause-amd64:3.0
+      - name: boatload-hello-kubernetes
+        image: quay.io/akrzos/hello-kubernetes:20210907
