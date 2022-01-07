@@ -2,6 +2,19 @@
 
 Workloads for OpenShift/Kubernetes clusters.
 
+- [boatload](#boatload)
+  - [Overview](#overview)
+  - [Labels for boatload workload](#labels-for-boatload-workload)
+  - [Running boatload workload](#running-boatload-workload)
+  - [boatload workload object hierarchy](#boatload-workload-object-hierarchy)
+  - [boatload image preloading](#boatload-image-preloading)
+  - [boatload workload container resource configuration](#boatload-workload-container-resource-configuration)
+  - [boatload workload container image configuration](#boatload-workload-container-image-configuration)
+  - [boatload workload container probe configuration](#boatload-workload-container-probe-configuration)
+  - [boatload workload container environment configuration](#boatload-workload-container-environment-configuration)
+  - [boatload workload pod annotations configuration](#boatload-workload-pod-annotations-configuration)
+  - [boatload workload cleanup](#boatload-workload-cleanup)
+
 ## Overview
 
 The boatload workload is designed to stress test node density and remote worker node clusters.
@@ -10,7 +23,7 @@ The boatload workload is designed to stress test node density and remote worker 
 2. Ensure [kube-burner](https://github.com/cloud-bulldozer/kube-burner) is installed (Version `v0.14.3`)
 3. Install python requirements - `pip3 install -r requirements.txt`
 4. (Optional) Label nodes with `labeler.py` (Generally for remote worker node workloads)
-5. (Optional) Preload images onto nodes
+5. (Optional) [Preload images](#boatload-image-preloading) onto nodes
 6. Run `boatload.py`
 
 ```console
@@ -259,7 +272,7 @@ CPU requests and limits is in millicores, thus `1000` equals 1 cpu core. Memory 
 
 The boatload workload allows setting a custom image with the containers it deploys. Use the `-i` option to change the container image. The default container image is `quay.io/redhat-performance/test-gohttp-probe:v0.0.2`. The `test-gohttp-probe` container image exposes a `livez` and `readyz` endpoint so you can easily test probe configuration in conjunction with various object hierarchies.
 
-An example of a container image that works with all probes disabled is the pause pod.
+An example of a container image that works with all probes disabled is the pause image.
 
 ```console
 $ ./boatload.py -i 'gcr.io/google_containers/pause-amd64:3.0' --no-probes
