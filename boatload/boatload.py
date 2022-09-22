@@ -807,7 +807,7 @@ def main():
     if cliargs.prometheus_token == "" and not (cliargs.prometheus_url == ""):
       logger.info("Prometheus token not set, attempting to get prometheus "
                   "token with OpenShift client and kubeburner sa")
-      oc_cmd = ["oc", "sa", "get-token", "kubeburner", "-n", "default"]
+      oc_cmd = ["oc", "create", "token", "kubeburner", "-n", "default"]
       rc, output = command(oc_cmd, cliargs.dry_run, mask_output=True)
       if rc != 0:
         logger.warning("Unable to determine prometheus token via oc, disabling metrics phase, oc rc: {}".format(rc))
